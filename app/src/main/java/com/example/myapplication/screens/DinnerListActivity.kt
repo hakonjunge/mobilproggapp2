@@ -262,12 +262,14 @@ class DinnerListActivity : ComponentActivity() {
             Icon(
                 imageVector = Icons.Default.Menu,
                 contentDescription = "Menu",
-                tint = if (activeIcon.value == "activity") Color.White else Color.Gray,
+                tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
                 modifier = Modifier
                     .size(32.dp)
                     .clickable {
-                        activeIcon.value = "activity"
-                        navController.navigate("activity") // Navigate to Activity2
+                        activeIcon.value = "menu"
+                        navController.navigate("culinaire") {
+                            popUpTo("culinaire") { inclusive = true } // Rens tilbake-stakken og naviger til "culinaire"
+                        }
                     }
             )
 

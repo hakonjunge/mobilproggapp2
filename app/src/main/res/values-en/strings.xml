@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">My Application</string>
+    <string name="title_activity_login">Login</string>
+    <string name="title_activity_register">Register</string>
+    <string name="title_activity_culinaire">Culinaire</string>
+    <string name="title_activity_ukeplan">Weekplan</string>
+    <string name="title_activity_bottom_nav_bar">BottomNavBar</string>
+    <string name="title_activity_my_dinners_screen">MyDinnersScreen</string>
+    <string name="title_activity_settings_screen">SettingsScreen</string>
+
+    <string name="no_recipe_found">No recipe found.</string>
+    <string name="time">Time</string>
+    <string name="choose_ingredients_and_time">Choose ingredients and time</string>
+    <string name="available_ingredients">Available ingredients</string>
+    <string name="allergies_optional">Allergies or Intolerances (optional)</string>
+    <string name="generate_recipe">Generate recipe</string>
+    <string name="view_previous_recipes">View previous recipes</string>
+
+    <string name="recipe">Recipe</string>
+    <string name="minutes">minutes</string>
+    <string name="ingredients">Ingredients</string>
+    <string name="description">Description</string>
+</resources>

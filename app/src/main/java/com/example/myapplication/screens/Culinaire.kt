@@ -3,6 +3,7 @@ package com.example.myapplication.screens
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -34,6 +35,8 @@ import com.example.myapplication.screens.gpt.GPTViewModel
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.example.myapplication.R // Importér R-filen for å kunne bruke string-ressursene
 
 
 class Culinaire : ComponentActivity() {
@@ -56,19 +59,23 @@ fun CulinaireNavigation() {
     }
 }
 
+
 @Composable
 fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = viewModel()) {
+
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        viewModel.initializeResponse(context)
+    }
+
     var selectedIngredients by remember { mutableStateOf("") }
     var allergiesInfo by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf(0f) }
-
-    // Collect the GPT response from the ViewModel
-    val gptResponse by viewModel.gptResponse.collectAsState(initial = "Ingen oppskrift funnet.")
-    val coroutineScope = rememberCoroutineScope()
-    val context = LocalContext.current
     val activeIcon = remember { mutableStateOf("menu") } // Track active icon for bottom menu
 
-    // UI Layout
+    val gptResponse by viewModel.gptResponse.collectAsState(initial = stringResource(id = R.string.no_recipe_found))
+    val coroutineScope = rememberCoroutineScope()
+
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -78,14 +85,14 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "Velg ingredienser og tid",
+                text = stringResource(id = R.string.choose_ingredients_and_time),
                 style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
                 modifier = Modifier.padding(vertical = 16.dp)
             )
 
             // Time Slider
             Text(
-                text = "Tid: ${selectedTime.toInt()} min",
+                text = "${stringResource(id = R.string.time)}: ${selectedTime.toInt()} min",
                 style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -103,7 +110,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
             OutlinedTextField(
                 value = selectedIngredients,
                 onValueChange = { selectedIngredients = it },
-                label = { Text("Tilgjengelige Ingredienser") },
+                label = { Text(stringResource(id = R.string.available_ingredients)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
@@ -113,7 +120,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
             OutlinedTextField(
                 value = allergiesInfo,
                 onValueChange = { allergiesInfo = it },
-                label = { Text("Allergier eller Intoleranser (valgfritt)") },
+                label = { Text(stringResource(id = R.string.allergies_optional)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
@@ -122,27 +129,60 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Button to fetch recipe from GPT
-            Button(onClick = {
-                val ingredients = selectedIngredients.split(",").map { it.trim() }
-                coroutineScope.launch {
-                    viewModel.fetchRecipe(ingredients, selectedTime.toInt(), allergiesInfo)
+            // Button Row for Actions
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            val ingredients = selectedIngredients.split(",").map { it.trim() }
+                            coroutineScope.launch {
+                                viewModel.fetchRecipe(context, ingredients, selectedTime.toInt(), allergiesInfo) // Pass context here
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Text(stringResource(id = R.string.generate_recipe))
+                    }
                 }
-            }) {
-                Text("Finn oppskrift", fontSize = 18.sp)
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            Log.d("CulinaireScreen", "Navigerer til ViewOldRecipe")
+                            startViewOldRecipeActivity(context)
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Text(stringResource(id = R.string.view_previous_recipes))
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Display GPT response
             Text(
-                text = gptResponse ?: "Ingen oppskrift funnet.",
+                text = gptResponse,
                 style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         }
 
-        // Bottom Menu Bar
+        // Legger til navigasjonsboks nederst på skjermen
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -171,7 +211,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                         .size(32.dp)
                         .clickable {
                             activeIcon.value = "profile"
-                            startDinnerListActivity(context)
+                            startDinnerListActivity(context) // Sender Context her
                         }
                 )
                 Icon(
@@ -192,48 +232,13 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
     }
 }
 
-
+// Funksjon for å starte DinnerListActivity
 fun startDinnerListActivity(context: Context) {
     val intent = Intent(context, DinnerListActivity::class.java)
     context.startActivity(intent)
 }
 
-@Composable
-fun IngredientSelectionRow(
-    title: String,
-    ingredientList: List<String>,
-    selectedIngredient: String?,
-    onIngredientSelected: (String) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column(modifier = Modifier.padding(8.dp)) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-                .clickable { expanded = !expanded }
-        ) {
-            Text(
-                text = selectedIngredient ?: "Velg $title",
-                modifier = Modifier.padding(8.dp)
-            )
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            ingredientList.forEach { ingredient ->
-                DropdownMenuItem(
-                    text = { Text(ingredient) },
-                    onClick = {
-                        onIngredientSelected(ingredient)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
+fun startViewOldRecipeActivity(context: Context) {
+    val intent = Intent(context, ViewOldRecipe::class.java)
+    context.startActivity(intent)
 }

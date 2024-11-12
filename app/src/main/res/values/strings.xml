@@ -1,12 +1,23 @@
 <resources>
     <string name="app_name">My Application</string>
-    <string name="title_activity_login">Login</string>
-    <string name="title_activity_register">Register</string>
+    <string name="title_activity_login">Logg inn</string>
+    <string name="title_activity_register">Registrer</string>
     <string name="title_activity_culinaire">Culinaire</string>
     <string name="title_activity_ukeplan">Ukeplan</string>
     <string name="title_activity_bottom_nav_bar">BottomNavBar</string>
     <string name="title_activity_my_dinners_screen">MyDinnersScreen</string>
     <string name="title_activity_settings_screen">SettingsScreen</string>
 
+    <string name="no_recipe_found">Ingen oppskrift funnet.</string>
+    <string name="time">Tid</string>
+    <string name="choose_ingredients_and_time">Velg ingredienser og tid</string>
+    <string name="available_ingredients">Tilgjengelige ingredienser</string>
+    <string name="allergies_optional">Allergier eller Intoleranser (valgfritt)</string>
+    <string name="generate_recipe">Generer oppskrift</string>
+    <string name="view_previous_recipes">Se tidligere oppskrifter</string>
 
+    <string name="recipe">Oppskrift</string>
+    <string name="minutes">minutter</string>
+    <string name="ingredients">Ingredienser</string>
+    <string name="description">Beskrivelse</string>
 </resources>

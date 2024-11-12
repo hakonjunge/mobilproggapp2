@@ -13,6 +13,8 @@
         android:theme="@style/Theme.MyApplication"
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="tiramisu">
+        <activity android:name=".screens.ViewOldRecipe" />
+
         <activity
             android:name=".screens.DinnerListActivity"
             android:exported="false"
@@ -28,6 +30,7 @@
             android:exported="true"
             android:label="@string/title_activity_login"
             android:theme="@style/Theme.MyApplication">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

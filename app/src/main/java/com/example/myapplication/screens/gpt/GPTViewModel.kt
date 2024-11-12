@@ -1,5 +1,6 @@
 package com.example.myapplication.screens.gpt
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import androidx.compose.ui.res.stringResource
+import com.example.myapplication.R
 
 class GPTViewModel : ViewModel() {
 
@@ -18,26 +21,34 @@ class GPTViewModel : ViewModel() {
     private val _gptQuery = MutableStateFlow("")
     val gptQuery: StateFlow<String> = _gptQuery.asStateFlow()
 
-    private val _gptResponse = MutableStateFlow("Ingen oppskrift funnet.")
+    private val _gptResponse = MutableStateFlow("")  // Leave empty initially
     val gptResponse: StateFlow<String> = _gptResponse.asStateFlow()
 
     private val firebaseDatabase = FirebaseDatabase.getInstance("https://culinaire-d7287-default-rtdb.europe-west1.firebasedatabase.app/")
     private val auth = FirebaseAuth.getInstance()
 
-    fun fetchRecipe(ingredients: List<String>, time: Int, allergies: String?) {
-        // Lag en tekst for allergier hvis det er spesifisert
+    fun initializeResponse(context: Context) {
+        // Sets the localized initial response
+        _gptResponse.value = context.getString(R.string.no_recipe_found)
+    }
+
+    fun fetchRecipe(context: Context, ingredients: List<String>, time: Int, allergies: String?) {
         val allergyText = if (!allergies.isNullOrBlank()) {
-            " Exclude any ingredients that may cause the following allergies or intolerances: $allergies."
+            " ${context.getString(R.string.allergies_optional)}: $allergies."
         } else ""
 
-        // Oppdater forespørselen med en kommentar om ingrediensene og basisvarer
         val query = """
         Find a recipe that uses some of the following ingredients from my fridge and pantry: ${ingredients.joinToString(", ")}.
         The recipe should be ready within $time minutes. Note: it’s not necessary to use every ingredient listed.
         Assume I have basic ingredients like salt, pepper, and oil available at home.$allergyText
-        Please respond in JSON format with the fields 'name' (string), 'ingredients' (array of strings), 
-        and 'description' (array of strings describing the steps).
-        When generating the recipe, please provide the instructions in the same language as the ingredient list given    
+        
+        Please respond in JSON format with the fields:
+        - 'name' (string): the name of the recipe.
+        - 'ingredients' (array of strings): each ingredient as a separate string.
+        - 'description' (array of strings): each step as a plain instruction without any numbering or prefixes like "Step 1" or "1.".
+        - 'time' (integer): the preparation time in minutes.
+    
+        When generating the recipe, please provide the instructions in the same language as the ingredient list given.
         """.trimIndent()
 
         viewModelScope.launch {
@@ -45,55 +56,55 @@ class GPTViewModel : ViewModel() {
             val response = gptService.getRecipeResponse(query)
 
             if (response != null) {
-                // Vis lesbar tekst til brukeren
-                _gptResponse.value = formatRecipeText(response)
-                // Lagre rå JSON til Firebase
+                _gptResponse.value = formatRecipeText(context, response)
                 saveRecipeToRealtimeDatabase(response)
             } else {
-                _gptResponse.value = "Ingen oppskrift funnet."
+                _gptResponse.value = context.getString(R.string.no_recipe_found)
             }
         }
     }
 
-    // Hjelpefunksjon for å formatere JSON-oppkrift til lesbar tekst
-    private fun formatRecipeText(jsonString: String): String {
-        return try {
-            // Parse JSON-strengen til et JSONObject
-            val jsonObject = JSONObject(jsonString)
 
-            // Hent verdier fra JSON-objektet
+    private fun formatRecipeText(context: Context, jsonString: String): String {
+        return try {
+            val jsonObject = JSONObject(jsonString)
             val name = jsonObject.getString("name")
+            val time = jsonObject.optInt("time", -1)
             val ingredients = jsonObject.getJSONArray("ingredients")
             val description = jsonObject.getJSONArray("description")
 
-            // Bygg opp teksten for å vise den som en lesbar oppskrift
             val formattedText = StringBuilder()
-            formattedText.append("Oppskrift: $name\n\n")
-            formattedText.append("Ingredienser:\n")
+            formattedText.append("${context.getString(R.string.recipe)}: $name\n")
+
+            if (time != -1) {
+                formattedText.append("${context.getString(R.string.time)}: $time ${context.getString(R.string.minutes)}\n\n")
+            }
+
+            formattedText.append("${context.getString(R.string.ingredients)}:\n")
             for (i in 0 until ingredients.length()) {
                 formattedText.append("- ${ingredients.getString(i)}\n")
             }
-            formattedText.append("\nBeskrivelse:\n")
+
+            formattedText.append("\n${context.getString(R.string.description)}:\n")
             for (i in 0 until description.length()) {
-                formattedText.append("${i + 1}. ${description.getString(i)}\n")
+                // Remove any initial numbering like "1. ", "2. " etc.
+                val stepText = description.getString(i).replace(Regex("^\\d+\\.\\s*"), "")
+                formattedText.append("${i + 1}. $stepText\n") // Add consistent numbering here
             }
 
-            // Returner den formatterte oppskrifts teksten
             formattedText.toString()
         } catch (e: Exception) {
-            Log.e("GPTViewModel", "Kunne ikke lese JSON-oppbyggingen: ${e.message}")
-            "Kunne ikke lese oppskriftens format."
+            Log.e("GPTViewModel", "Error parsing JSON: ${e.message}")
+            context.getString(R.string.no_recipe_found)
         }
     }
+
     private fun saveRecipeToRealtimeDatabase(response: String) {
         val userId = auth.currentUser?.uid ?: return
         val recipeRef = firebaseDatabase.getReference("users/$userId/saved_recipes")
 
         try {
-            // Lag JSON-objekt fra responsen
             val recipeData = JSONObject(response)
-
-            // Send JSON-objektet direkte til Firebase
             recipeRef.push().setValue(recipeData.toString())
                 .addOnSuccessListener {
                     Log.d("GPTViewModel", "Recipe saved successfully in Realtime Database.")
