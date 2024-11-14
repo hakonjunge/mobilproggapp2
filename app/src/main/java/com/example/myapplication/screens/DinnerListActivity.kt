@@ -124,6 +124,18 @@ class DinnerListActivity : ComponentActivity() {
     }
 
 
+
+    fun startSettingsActivity(context: Context) {
+        val intent = Intent(context, Settings::class.java)
+        context.startActivity(intent)
+    }
+    fun startCulinaireActivity(context: Context) {
+        val intent = Intent(context, Culinaire::class.java)
+        context.startActivity(intent)
+    }
+
+
+
     @Composable
     fun DinnerListScreen(navController: NavHostController) {
         var dinners by remember { mutableStateOf<List<Dinner>>(emptyList()) }
@@ -264,14 +276,17 @@ class DinnerListActivity : ComponentActivity() {
                 contentDescription = "Menu",
                 tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(48.dp)
                     .clickable {
-                        activeIcon.value = "menu"
-                        navController.navigate("culinaire") {
-                            popUpTo("culinaire") { inclusive = true } // Rens tilbake-stakken og naviger til "culinaire"
-                        }
+                        // Start Settings activity when the user clicks on the settings icon
+                        startCulinaireActivity(context)
                     }
+
             )
+
+
+
+
 
             // Dinner List Icon, white while on DinnerList
             Icon(
@@ -288,20 +303,13 @@ class DinnerListActivity : ComponentActivity() {
             // Settings Icon for navigating to Login activity
             Icon(
                 imageVector = Icons.Default.Settings,
-                contentDescription = "Logg ut",
-                tint = if (activeIcon.value == "setting") MaterialTheme.colorScheme.primary else Color.Gray,
+                contentDescription = "Settings",
+                tint = if (activeIcon.value == "settings") MaterialTheme.colorScheme.primary else Color.Gray,
                 modifier = Modifier
                     .size(48.dp)
                     .clickable {
-                        // Sign out the user
-                        FirebaseAuth.getInstance().signOut()
-
-                        // Create and launch an intent to open the Login activity
-                        val loginIntent = Intent(context, Login::class.java)
-                        context.startActivity(loginIntent)
-
-                        // Clear the activity stack to prevent returning to the previous screen
-                        (context as? Activity)?.finishAffinity()
+                        // Start Settings activity when the user clicks on the settings icon
+                        startSettingsActivity(context)
                     }
             )
         }

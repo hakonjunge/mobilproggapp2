@@ -1,3 +1,5 @@
+
+
 package com.example.myapplication.screens
 
 import android.content.Context
@@ -58,6 +60,8 @@ fun CulinaireNavigation() {
         composable("culinaire") { CulinaireScreen(navController = navController) }
     }
 }
+
+
 
 
 @Composable
@@ -206,7 +210,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Profile",
-                    tint = if (activeIcon.value == "profile") MaterialTheme.colorScheme.primary else Color.Gray,
+                    tint = if (activeIcon.value == "profile") Color.Gray else Color.Gray,
                     modifier = Modifier
                         .size(32.dp)
                         .clickable {
@@ -216,17 +220,16 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                 )
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "Logg ut",
+                    contentDescription = "Settings",
                     tint = if (activeIcon.value == "settings") MaterialTheme.colorScheme.primary else Color.Gray,
                     modifier = Modifier
                         .size(48.dp)
                         .clickable {
-                            FirebaseAuth.getInstance().signOut()
-                            navController.navigate("login") {
-                                popUpTo("culinaire") { inclusive = true }
-                            }
+                            // Start Settings activity when the user clicks on the settings icon
+                            startSettingsActivity(context)
                         }
                 )
+
             }
         }
     }
@@ -242,3 +245,10 @@ fun startViewOldRecipeActivity(context: Context) {
     val intent = Intent(context, ViewOldRecipe::class.java)
     context.startActivity(intent)
 }
+
+fun startSettingsActivity(context: Context) {
+    val intent = Intent(context, Settings::class.java)
+    context.startActivity(intent)
+}
+
+
