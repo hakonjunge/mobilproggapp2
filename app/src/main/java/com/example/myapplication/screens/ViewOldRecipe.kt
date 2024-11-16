@@ -26,6 +26,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import org.json.JSONObject
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.ui.res.stringResource
+import com.example.myapplication.R
 
 class ViewOldRecipe : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,17 +45,17 @@ fun ViewOldRecipeScreen() {
     val userId = auth.currentUser?.uid
     var recipes by remember { mutableStateOf<List<SavedRecipe>>(emptyList()) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var selectedRecipe by remember { mutableStateOf<SavedRecipe?>(null) } // Holder oversikt over valgt oppskrift
+    var selectedRecipe by remember { mutableStateOf<SavedRecipe?>(null) }
     val context = LocalContext.current
     val activeIcon = remember { mutableStateOf("profile") }
     val navController = rememberNavController()
 
     LaunchedEffect(Unit) {
         if (userId == null) {
-            errorMessage = "Bruker er ikke logget inn. Kan ikke hente oppskrifter."
-            Log.d("ViewOldRecipeScreen", "Brukeren er ikke logget inn. Henter ikke data.")
+            errorMessage = context.getString(R.string.no_user)
+            Log.d("ViewOldRecipeScreen", errorMessage ?: "No user error message available")
         } else {
-            Log.d("ViewOldRecipeScreen", "Brukeren er logget inn med UID: $userId. Prøver å hente data.")
+            Log.d("ViewOldRecipeScreen", "User logged in with UID: $userId. Attempting to fetch data.")
             database.getReference("users/$userId/saved_recipes").get()
                 .addOnSuccessListener { dataSnapshot ->
                     val recipeList = mutableListOf<SavedRecipe>()
@@ -79,20 +81,22 @@ fun ViewOldRecipeScreen() {
                     recipes = recipeList
                 }
                 .addOnFailureListener {
-                    errorMessage = "Kunne ikke hente oppskrifter: ${it.message}"
-                    Log.e("ViewOldRecipeScreen", "Feil ved henting av data: ${it.message}")
+                    errorMessage = "${context.getString(R.string.fetch_error)} ${it.message}"
+                    Log.e("ViewOldRecipeScreen", errorMessage ?: "Unknown fetch error")
                 }
         }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
         if (selectedRecipe != null) {
-            // Hvis en oppskrift er valgt, vis detaljvisningen
             RecipeDetailScreen(recipe = selectedRecipe!!, onBack = { selectedRecipe = null })
         } else {
-            // Ellers vis listen
             if (errorMessage != null) {
-                Text(text = errorMessage ?: "Ukjent feil", color = Color.Red, modifier = Modifier.padding(16.dp))
+                Text(
+                    text = errorMessage ?: context.getString(R.string.unknown_error),
+                    color = Color.Red,
+                    modifier = Modifier.padding(16.dp)
+                )
             } else {
                 LazyColumn(
                     modifier = Modifier
@@ -101,7 +105,7 @@ fun ViewOldRecipeScreen() {
                 ) {
                     items(recipes) { recipe ->
                         RecipeItem(recipe) {
-                            selectedRecipe = recipe // Sett valgt oppskrift når en oppskrift trykkes på
+                            selectedRecipe = recipe
                         }
                         Divider()
                     }
@@ -109,7 +113,7 @@ fun ViewOldRecipeScreen() {
             }
         }
 
-        // Navigasjonsboks nederst
+        // Bottom navigation box
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -131,7 +135,7 @@ fun ViewOldRecipeScreen() {
                         .clickable {
                             activeIcon.value = "menu"
                             navController.navigate("culinaire") {
-                                popUpTo("culinaire") { inclusive = true } // Rens tilbake-stakken og naviger til "culinaire"
+                                popUpTo("culinaire") { inclusive = true }
                             }
                         }
                 )
@@ -143,12 +147,12 @@ fun ViewOldRecipeScreen() {
                         .size(32.dp)
                         .clickable {
                             activeIcon.value = "profile"
-                            startDinnerListActivity(context) // Sender Context her
+                            startDinnerListActivity(context)
                         }
                 )
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "Logg ut",
+                    contentDescription = "Log out",
                     tint = if (activeIcon.value == "settings") MaterialTheme.colorScheme.primary else Color.Gray,
                     modifier = Modifier
                         .size(48.dp)
@@ -170,14 +174,14 @@ fun RecipeItem(recipe: SavedRecipe, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable { onClick() } // Gjør komponenten klikkbar
+            .clickable { onClick() }
     ) {
         Text(
-            text = "Oppskrift: ${recipe.name}",
+            text = "${stringResource(id = R.string.recipe_title)} ${recipe.name}",
             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp)
         )
         Text(
-            text = "Tid: ${recipe.time} minutter",
+            text = "${stringResource(id = R.string.time)}: ${recipe.time} ${stringResource(id = R.string.minutes)}",
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp),
             color = Color.Gray
         )
@@ -187,34 +191,32 @@ fun RecipeItem(recipe: SavedRecipe, onClick: () -> Unit) {
 @Composable
 fun RecipeDetailScreen(recipe: SavedRecipe, onBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Tilbakeknapp
         IconButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) {
-            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Tilbake")
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = stringResource(id = R.string.back))
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Detaljert informasjon om oppskriften
         Text(
-            text = "Oppskrift: ${recipe.name}",
+            text = "${stringResource(id = R.string.recipe)}: ${recipe.name}",
             style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp)
         )
         Text(
-            text = "Tid: ${recipe.time} minutter",
+            text = "${stringResource(id = R.string.time)}: ${recipe.time} ${stringResource(id = R.string.minutes)}",
             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
             color = Color.Gray
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Ingredienser:", style = MaterialTheme.typography.bodyLarge)
+        Text(text = "${stringResource(id = R.string.ingredients)}:", style = MaterialTheme.typography.bodyLarge)
         recipe.ingredients.forEach { ingredient ->
             Text(text = "- $ingredient", style = MaterialTheme.typography.bodyMedium)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Beskrivelse:", style = MaterialTheme.typography.bodyLarge)
+        Text(text = "${stringResource(id = R.string.description)}:", style = MaterialTheme.typography.bodyLarge)
         recipe.description.forEachIndexed { index, step ->
             Text(text = "${index + 1}. $step", style = MaterialTheme.typography.bodyMedium)
         }
@@ -227,3 +229,5 @@ data class SavedRecipe(
     val description: List<String> = emptyList(),
     val time: Int = 0
 )
+
+

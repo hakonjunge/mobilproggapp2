@@ -7,7 +7,6 @@
     <string name="title_activity_bottom_nav_bar">BottomNavBar</string>
     <string name="title_activity_my_dinners_screen">MyDinnersScreen</string>
     <string name="title_activity_settings_screen">SettingsScreen</string>
-
     <string name="no_recipe_found">No recipe found.</string>
     <string name="time">Time</string>
     <string name="choose_ingredients_and_time">Choose ingredients and time</string>
@@ -15,9 +14,20 @@
     <string name="allergies_optional">Allergies or Intolerances (optional)</string>
     <string name="generate_recipe">Generate recipe</string>
     <string name="view_previous_recipes">View previous recipes</string>
-
     <string name="recipe">Recipe</string>
     <string name="minutes">minutes</string>
     <string name="ingredients">Ingredients</string>
     <string name="description">Description</string>
+    <string name="back">Back</string>
+    <string name="no_user">User not logged in. Cannot fetch recipes.</string>
+    <string name="fetch_error">Could not fetch recipes:</string>
+    <string name="recipe_title">Recipe:</string>
+    <string name="unknown_error">An unknown error occurred</string>
+    <string name="login">Login</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="enter_email_password">Please enter both email and password</string>
+    <string name="login_success">Login successful</string>
+    <string name="login_failed">Login failed</string>
+    <string name="create_account">Create Account</string>
 </resources>
