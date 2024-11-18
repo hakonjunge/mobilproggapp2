@@ -15,6 +15,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -23,6 +24,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
@@ -36,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.myapplication.screens.ui.theme.MyApplicationTheme
 import com.google.firebase.firestore.FirebaseFirestore
@@ -54,9 +58,10 @@ class DinnerListActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge() // Sørg for at aktiviteten fyller hele skjermen
         setContent {
             MyApplicationTheme {
-                val navController = rememberNavController() // Create NavController
+                val navController = rememberNavController()
 
                 // Set up the NavHost with NavController and routes
                 NavHost(navController = navController, startDestination = "dinnerList") {
@@ -71,64 +76,22 @@ class DinnerListActivity : ComponentActivity() {
                 if (result.resultCode == RESULT_OK) {
                     val bitmap = result.data?.extras?.get("data") as? Bitmap
                     bitmap?.let {
-                        capturedImages = capturedImages + it // Add new image to the list
+                        capturedImages = capturedImages + it
                     }
                 }
             }
     }
 
-
-    private fun uploadImageToFirebase(bitmap: Bitmap, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
-        val storageRef = FirebaseStorage.getInstance().reference
-        val imageRef = storageRef.child("images/${UUID.randomUUID()}.jpg") // Unik identifikator for bildet
-
-        val baos = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-        val data = baos.toByteArray()
-
-        val uploadTask = imageRef.putBytes(data)
-        uploadTask.addOnSuccessListener {
-            imageRef.downloadUrl.addOnSuccessListener { uri ->
-                onSuccess(uri.toString()) // Returner URL-en
-            }
-        }.addOnFailureListener { e ->
-            onFailure(e)
-        }
+    private fun openCamera(context: Context) {
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        cameraLauncher.launch(intent)
     }
-
-
-    @Composable
-    fun FullScreenImageDialog(
-        bitmap: Bitmap,
-        onDismiss: () -> Unit
-    ) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(usePlatformDefaultWidth = false), // Make it take full width
-            title = null,
-            text = {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Full-Screen Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(500.dp) // Adjust height as needed
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Close")
-                }
-            }
-        )
-    }
-
 
     @Composable
     fun DinnerListScreen(navController: NavHostController) {
         var dinners by remember { mutableStateOf<List<Dinner>>(emptyList()) }
         var showDialog by remember { mutableStateOf(false) }
-        var selectedImage by remember { mutableStateOf<Bitmap?>(null) } // State for the selected image
+        var selectedImage by remember { mutableStateOf<Bitmap?>(null) }
 
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         val activeIcon = remember { mutableStateOf("dinner") }
@@ -156,53 +119,53 @@ class DinnerListActivity : ComponentActivity() {
             }
         }
 
-        // Wrapping everything in a Box to allow overlaying the IconButton
-        Box(modifier = Modifier.fillMaxSize()) {
+        // Fullskjerm layout for DinnerListScreen
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Title and dinner list
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .weight(1f) // Dette sikrer at listen tar opp tilgjengelig plass
                     .padding(16.dp)
-                    .align(Alignment.TopCenter) // Align column content at the top
+                    .verticalScroll(rememberScrollState())
             ) {
-                // Title for the screen
                 Text(
                     text = "Mine Middager",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
+                    modifier = Modifier.padding(vertical = 16.dp)
                 )
 
                 // LazyColumn for scrolling images, showing the newest first by reversing the list
                 LazyColumn(
-                    modifier = Modifier.weight(1f), // Use weight to allow LazyColumn to take available space
+                    modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(capturedImages.reversed()) { bitmap -> // Reverse the list here
+                    items(capturedImages.reversed()) { bitmap ->
                         Image(
                             bitmap = bitmap.asImageBitmap(),
                             contentDescription = "Captured Image",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(250.dp) // Set a fixed height for the images
+                                .height(250.dp)
                                 .padding(4.dp)
                                 .clickable {
-                                    selectedImage = bitmap // Set selected image
-                                    showDialog = true // Show the dialog
+                                    selectedImage = bitmap
+                                    showDialog = true
                                 }
                         )
                     }
-                    // Add a Spacer at the end to create extra scroll space
                     item {
-                        Spacer(modifier = Modifier.height(120.dp)) // Adjust height as needed
+                        Spacer(modifier = Modifier.height(120.dp))
                     }
                 }
             }
 
-            // Floating + Icon at the bottom center, overlaid on top of content
+            // Floating Action Button for adding new images
             IconButton(
                 onClick = { openCamera(context) },
                 modifier = Modifier
-                    .align(Alignment.BottomCenter) // Aligns at the bottom center of the screen
-                    .padding(bottom = 90.dp) // Adjust padding as needed
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 40.dp)
                     .size(56.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primary,
@@ -217,93 +180,106 @@ class DinnerListActivity : ComponentActivity() {
                 )
             }
 
-            // Bottom navigation bar fixed at the bottom
-            BottomNavigationBar(
-                navController = navController,
+            // Bottom navigation bar
+            BottomNavigationBarForDinnerList(
                 activeIcon = activeIcon,
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth() // Make sure it fills the entire width
+                    .fillMaxWidth()
                     .height(80.dp)
             )
 
-            // Show the full-screen image dialog if the selected image is set
+            // Full-screen image dialog
             if (showDialog && selectedImage != null) {
                 FullScreenImageDialog(bitmap = selectedImage!!) {
-                    showDialog = false // Close the dialog
-                    selectedImage = null // Clear the selected image
+                    showDialog = false
+                    selectedImage = null
                 }
             }
         }
     }
+}
+@Composable
+fun BottomNavigationBarForDinnerList(
+    activeIcon: MutableState<String>,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
 
-
-    private fun openCamera(context: Context) {
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        cameraLauncher.launch(intent)
-    }
-
-    @Composable
-    fun BottomNavigationBar(
-        navController: NavHostController,
-        activeIcon: MutableState<String>,
-        modifier: Modifier = Modifier
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(80.dp) // Set the height to ensure it’s consistent
+            .background(MaterialTheme.colorScheme.secondary)
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically // Center the icons vertically
     ) {
-        val context = LocalContext.current // Get the current context for creating an Intent
+        // Menu Icon
+        Icon(
+            imageVector = Icons.Default.Menu,
+            contentDescription = "Menu",
+            tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
+            modifier = Modifier
+                .size(36.dp) // Adjust icon size
+                .clickable {
+                    activeIcon.value = "menu"
+                    val culinaireIntent = Intent(context, Culinaire::class.java)
+                    context.startActivity(culinaireIntent)
+                }
+        )
 
-        Row(
-            modifier = modifier
-                .background(MaterialTheme.colorScheme.secondary)
-                .padding(horizontal = 24.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Menu Icon for going back to Activity2
-            Icon(
-                imageVector = Icons.Default.Menu,
-                contentDescription = "Menu",
-                tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clickable {
-                        activeIcon.value = "menu"
-                        navController.navigate("culinaire") {
-                            popUpTo("culinaire") { inclusive = true } // Rens tilbake-stakken og naviger til "culinaire"
-                        }
-                    }
-            )
+        // Dinner List Icon
+        Icon(
+            imageVector = Icons.Default.Person,
+            contentDescription = "Dinner",
+            tint = if (activeIcon.value == "dinner") Color.White else Color.Gray,
+            modifier = Modifier
+                .size(36.dp)
+                .clickable {
+                    activeIcon.value = "dinner"
+                }
+        )
 
-            // Dinner List Icon, white while on DinnerList
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Dinner",
-                tint = if (activeIcon.value == "dinner") Color.White else Color.Gray,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clickable {
-                        activeIcon.value = "dinner" // Set active icon
-                    }
-            )
-
-            // Settings Icon for navigating to Login activity
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Logg ut",
-                tint = if (activeIcon.value == "setting") MaterialTheme.colorScheme.primary else Color.Gray,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clickable {
-                        // Sign out the user
-                        FirebaseAuth.getInstance().signOut()
-
-                        // Create and launch an intent to open the Login activity
-                        val loginIntent = Intent(context, Login::class.java)
-                        context.startActivity(loginIntent)
-
-                        // Clear the activity stack to prevent returning to the previous screen
-                        (context as? Activity)?.finishAffinity()
-                    }
-            )
-        }
+        // Settings Icon
+        Icon(
+            imageVector = Icons.Default.Settings,
+            contentDescription = "Logg ut",
+            tint = if (activeIcon.value == "setting") MaterialTheme.colorScheme.primary else Color.Gray,
+            modifier = Modifier
+                .size(36.dp)
+                .clickable {
+                    FirebaseAuth.getInstance().signOut()
+                    val loginIntent = Intent(context, Login::class.java)
+                    context.startActivity(loginIntent)
+                    (context as? Activity)?.finishAffinity()
+                }
+        )
     }
 }
+
+@Composable
+fun FullScreenImageDialog(
+    bitmap: Bitmap,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false), // Make it take full width
+        title = null,
+        text = {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "Full-Screen Image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(500.dp) // Adjust height as needed
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+

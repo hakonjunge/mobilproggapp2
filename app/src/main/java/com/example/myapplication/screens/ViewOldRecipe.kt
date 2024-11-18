@@ -1,9 +1,12 @@
 package com.example.myapplication.screens
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,12 +31,16 @@ import org.json.JSONObject
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.ui.res.stringResource
 import com.example.myapplication.R
+import com.example.myapplication.screens.ui.theme.MyApplicationTheme
 
 class ViewOldRecipe : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge() // Ensure the activity fills the entire screen
         setContent {
-            ViewOldRecipeScreen()
+            MyApplicationTheme {
+                ViewOldRecipeScreen()
+            }
         }
     }
 }
@@ -47,8 +54,6 @@ fun ViewOldRecipeScreen() {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedRecipe by remember { mutableStateOf<SavedRecipe?>(null) }
     val context = LocalContext.current
-    val activeIcon = remember { mutableStateOf("profile") }
-    val navController = rememberNavController()
 
     LaunchedEffect(Unit) {
         if (userId == null) {
@@ -88,6 +93,23 @@ fun ViewOldRecipeScreen() {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        // Back button for navigating back to Culinaire
+        if (selectedRecipe == null) {
+            IconButton(
+                onClick = {
+                    val culinaireIntent = Intent(context, Culinaire::class.java)
+                    context.startActivity(culinaireIntent)
+                    (context as? Activity)?.finish() // Close ViewOldRecipe if necessary
+                },
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = stringResource(id = R.string.back)
+                )
+            }
+        }
+
         if (selectedRecipe != null) {
             RecipeDetailScreen(recipe = selectedRecipe!!, onBack = { selectedRecipe = null })
         } else {
@@ -100,69 +122,24 @@ fun ViewOldRecipeScreen() {
             } else {
                 LazyColumn(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(16.dp)
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
                 ) {
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp)) // Add some space at the top
+                    }
+
                     items(recipes) { recipe ->
                         RecipeItem(recipe) {
                             selectedRecipe = recipe
                         }
                         Divider()
                     }
-                }
-            }
-        }
 
-        // Bottom navigation box
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .background(MaterialTheme.colorScheme.secondary)
-                .padding(horizontal = 24.dp, vertical = 12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Menu",
-                    tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clickable {
-                            activeIcon.value = "menu"
-                            navController.navigate("culinaire") {
-                                popUpTo("culinaire") { inclusive = true }
-                            }
-                        }
-                )
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profile",
-                    tint = if (activeIcon.value == "profile") MaterialTheme.colorScheme.primary else Color.Gray,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clickable {
-                            activeIcon.value = "profile"
-                            startDinnerListActivity(context)
-                        }
-                )
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Log out",
-                    tint = if (activeIcon.value == "settings") MaterialTheme.colorScheme.primary else Color.Gray,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clickable {
-                            FirebaseAuth.getInstance().signOut()
-                            navController.navigate("login") {
-                                popUpTo("culinaire") { inclusive = true }
-                            }
-                        }
-                )
+                    item {
+                        Spacer(modifier = Modifier.height(32.dp)) // Add more space at the bottom
+                    }
+                }
             }
         }
     }
@@ -177,7 +154,7 @@ fun RecipeItem(recipe: SavedRecipe, onClick: () -> Unit) {
             .clickable { onClick() }
     ) {
         Text(
-            text = "${stringResource(id = R.string.recipe_title)} ${recipe.name}",
+            text = recipe.name,
             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp)
         )
         Text(

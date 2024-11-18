@@ -30,4 +30,7 @@
     <string name="login_success">Innlogging vellykket</string>
     <string name="login_failed">Innlogging mislyktes</string>
     <string name="create_account">Opprett konto</string>
+    <string name="generating">Genererer...</string>
+
+
 </resources>

@@ -30,4 +30,6 @@
     <string name="login_success">Login successful</string>
     <string name="login_failed">Login failed</string>
     <string name="create_account">Create Account</string>
+    <string name="generating">Generating...</string>
+
 </resources>

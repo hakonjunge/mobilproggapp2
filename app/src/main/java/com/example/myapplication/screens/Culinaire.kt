@@ -59,21 +59,16 @@ fun CulinaireNavigation() {
     }
 }
 
-
 @Composable
 fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = viewModel()) {
-
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        viewModel.initializeResponse(context)
-    }
 
     var selectedIngredients by remember { mutableStateOf("") }
     var allergiesInfo by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf(0f) }
     val activeIcon = remember { mutableStateOf("menu") } // Track active icon for bottom menu
 
-    val gptResponse by viewModel.gptResponse.collectAsState(initial = stringResource(id = R.string.no_recipe_found))
+    val gptResponse by viewModel.gptResponse.collectAsState(initial = "") // Start with empty string
     val coroutineScope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -145,7 +140,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                         onClick = {
                             val ingredients = selectedIngredients.split(",").map { it.trim() }
                             coroutineScope.launch {
-                                viewModel.fetchRecipe(context, ingredients, selectedTime.toInt(), allergiesInfo) // Pass context here
+                                viewModel.fetchRecipe(context, ingredients, selectedTime.toInt(), allergiesInfo)
                             }
                         },
                         modifier = Modifier.fillMaxSize()
@@ -163,7 +158,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                 ) {
                     Button(
                         onClick = {
-                            Log.d("CulinaireScreen", "Navigerer til ViewOldRecipe")
+                            Log.d("CulinaireScreen", "Navigating to ViewOldRecipe")
                             startViewOldRecipeActivity(context)
                         },
                         modifier = Modifier.fillMaxSize()
@@ -182,7 +177,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
             )
         }
 
-        // Legger til navigasjonsboks nederst på skjermen
+        // Centered and Balanced Bottom Navigation Bar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -200,7 +195,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                     contentDescription = "Menu",
                     tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(36.dp) // Set icon size
                         .clickable { activeIcon.value = "menu" }
                 )
                 Icon(
@@ -208,10 +203,10 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                     contentDescription = "Profile",
                     tint = if (activeIcon.value == "profile") MaterialTheme.colorScheme.primary else Color.Gray,
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(36.dp)
                         .clickable {
                             activeIcon.value = "profile"
-                            startDinnerListActivity(context) // Sender Context her
+                            startDinnerListActivity(context)
                         }
                 )
                 Icon(
@@ -219,7 +214,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                     contentDescription = "Logg ut",
                     tint = if (activeIcon.value == "settings") MaterialTheme.colorScheme.primary else Color.Gray,
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(36.dp)
                         .clickable {
                             FirebaseAuth.getInstance().signOut()
                             navController.navigate("login") {
@@ -232,13 +227,15 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
     }
 }
 
-// Funksjon for å starte DinnerListActivity
+// Function to start DinnerListActivity
 fun startDinnerListActivity(context: Context) {
     val intent = Intent(context, DinnerListActivity::class.java)
     context.startActivity(intent)
 }
 
+
 fun startViewOldRecipeActivity(context: Context) {
     val intent = Intent(context, ViewOldRecipe::class.java)
     context.startActivity(intent)
-}
+}// Funksjon for å starte DinnerListActivity
+
