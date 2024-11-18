@@ -285,10 +285,7 @@ class DinnerListActivity : ComponentActivity() {
             )
 
 
-
-
-
-            // Dinner List Icon, white while on DinnerList
+            // Dinner List Icon, white while on DinnerList.
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "Dinner",
