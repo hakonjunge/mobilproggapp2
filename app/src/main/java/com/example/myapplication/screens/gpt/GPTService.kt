@@ -7,13 +7,13 @@ import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
+import com.aallam.openai.client.OpenAIConfig
 
 @OptIn(BetaOpenAI::class)
 class GPTService {
 
     // Direkte hardkodet API-nøkkel (ikke anbefalt for produksjon)
-    private val openAI = OpenAI("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")
-
+    private val openAI = OpenAI(OpenAIConfig(token = "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"))
     suspend fun getRecipeResponse(query: String): String? {
         val apiUrl = "https://api.openai.com/v1/chat/completions"  // Explicitly state the URL for logging
         return try {
