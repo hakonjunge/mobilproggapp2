@@ -211,16 +211,15 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                 )
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "Logg ut",
+                    contentDescription = "Settings",
                     tint = if (activeIcon.value == "settings") MaterialTheme.colorScheme.primary else Color.Gray,
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(48.dp)
                         .clickable {
-                            FirebaseAuth.getInstance().signOut()
-                            navController.navigate("login") {
-                                popUpTo("culinaire") { inclusive = true }
-                            }
+                            // Start Settings activity when the user clicks on the settings icon
+                            startSettingsActivity(context)
                         }
+
                 )
             }
         }
@@ -239,3 +238,7 @@ fun startViewOldRecipeActivity(context: Context) {
     context.startActivity(intent)
 }// Funksjon for å starte DinnerListActivity
 
+fun startSettingsActivity(context: Context) {
+    val intent = Intent(context, Settings::class.java)
+    context.startActivity(intent)
+}

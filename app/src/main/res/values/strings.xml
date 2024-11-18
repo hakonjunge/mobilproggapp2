@@ -31,6 +31,8 @@
     <string name="login_failed">Innlogging mislyktes</string>
     <string name="create_account">Opprett konto</string>
     <string name="generating">Genererer...</string>
+    <string name="myDinner">Mine Middager</string>
+    <string name="title_activity_settings" translatable="false">Settings</string>
 
 
 </resources>

@@ -1,15 +1,17 @@
 package com.example.myapplication.screens
 
-
 import com.google.firebase.storage.FirebaseStorage
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.util.UUID
-
 
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -24,10 +26,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -38,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -48,22 +50,25 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.NavHostController
+import com.example.myapplication.R
+import java.io.FileInputStream
 
 data class Dinner(val description: String, val imageUrl: String)
 
 class DinnerListActivity : ComponentActivity() {
     private val firestore = FirebaseFirestore.getInstance()
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
-    private var capturedImages by mutableStateOf<List<Bitmap>>(emptyList())
+    private var capturedImages by mutableStateOf<List<String>>(emptyList()) // Store file paths
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge() // Sørg for at aktiviteten fyller hele skjermen
+        loadSavedImages() // Load saved images on launch
+        enableEdgeToEdge()
+
         setContent {
             MyApplicationTheme {
                 val navController = rememberNavController()
 
-                // Set up the NavHost with NavController and routes
                 NavHost(navController = navController, startDestination = "dinnerList") {
                     composable("dinnerList") { DinnerListScreen(navController) }
                     composable("login") { LoginScreen(navController) }
@@ -76,83 +81,144 @@ class DinnerListActivity : ComponentActivity() {
                 if (result.resultCode == RESULT_OK) {
                     val bitmap = result.data?.extras?.get("data") as? Bitmap
                     bitmap?.let {
-                        capturedImages = capturedImages + it
+                        val imagePath = saveBitmapToFile(this, it)
+                        if (imagePath != null) {
+                            capturedImages = capturedImages + imagePath
+                            saveImagesToStorage(capturedImages) // Save image paths
+                        } else {
+                            Log.e("ImageStorage", "Failed to save image.")
+                        }
                     }
                 }
             }
     }
 
-    private fun openCamera(context: Context) {
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        cameraLauncher.launch(intent)
+    private fun saveBitmapToFile(context: Context, bitmap: Bitmap): String? {
+        val filename = "IMG_${UUID.randomUUID()}.jpg"
+        val dir = context.getExternalFilesDir("images")
+        val file = File(dir, filename)
+
+        var fileOutputStream: FileOutputStream? = null
+        return try {
+            fileOutputStream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
+            file.absolutePath
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
+        } finally {
+            fileOutputStream?.close()
+        }
+    }
+
+    private fun loadSavedImages() {
+        val sharedPreferences = getSharedPreferences("image_storage", Context.MODE_PRIVATE)
+        val imagePaths = sharedPreferences.getStringSet("image_paths", emptySet()) ?: emptySet()
+        capturedImages = imagePaths.toList()
+    }
+
+    private fun saveImagesToStorage(images: List<String>) {
+        val sharedPreferences = getSharedPreferences("image_storage", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putStringSet("image_paths", images.toSet())
+            apply()
+        }
+    }
+
+    @Composable
+    fun FullScreenImageDialog(
+        bitmap: Bitmap,
+        onDismiss: () -> Unit
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+            title = null,
+            text = {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = "Full-Screen Image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(500.dp)
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
+    fun startSettingsActivity(context: Context) {
+        val intent = Intent(context, Settings::class.java)
+        context.startActivity(intent)
+    }
+
+    fun startCulinaireActivity(context: Context) {
+        val intent = Intent(context, Culinaire::class.java)
+        context.startActivity(intent)
     }
 
     @Composable
     fun DinnerListScreen(navController: NavHostController) {
-        var dinners by remember { mutableStateOf<List<Dinner>>(emptyList()) }
         var showDialog by remember { mutableStateOf(false) }
         var selectedImage by remember { mutableStateOf<Bitmap?>(null) }
-
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
-        val activeIcon = remember { mutableStateOf("dinner") }
         val context = LocalContext.current
 
-        // Fetch dinners from Firestore
-        LaunchedEffect(Unit) {
-            userId?.let {
-                firestore.collection("dinners")
-                    .whereEqualTo("userId", it)
-                    .get()
-                    .addOnSuccessListener { documents ->
-                        dinners = documents.map { doc ->
-                            Dinner(
-                                description = doc.getString("description") ?: "",
-                                imageUrl = doc.getString("imageUrl") ?: ""
-                            ).also {
-                                Log.d("DinnerList", "Fetched dinner: ${it.description}, Image URL: ${it.imageUrl}")
-                            }
-                        }
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("DinnerList", "Error fetching dinners: $e")
-                    }
-            }
-        }
-
-        // Fullskjerm layout for DinnerListScreen
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Title and dinner list
+        Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f) // Dette sikrer at listen tar opp tilgjengelig plass
+                    .fillMaxSize()
                     .padding(16.dp)
-                    .verticalScroll(rememberScrollState())
+                    .align(Alignment.TopCenter)
             ) {
                 Text(
-                    text = "Mine Middager",
+                    text = stringResource(id = R.string.myDinner),
                     style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
 
-                // LazyColumn for scrolling images, showing the newest first by reversing the list
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(capturedImages.reversed()) { bitmap ->
-                        Image(
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "Captured Image",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(250.dp)
-                                .padding(4.dp)
-                                .clickable {
-                                    selectedImage = bitmap
-                                    showDialog = true
+                    items(capturedImages.reversed()) { imagePath ->
+                        val bitmap = loadBitmapFromFile(imagePath)
+                        bitmap?.let {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Image(
+                                    bitmap = it.asImageBitmap(),
+                                    contentDescription = "Captured Image",
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(250.dp)
+                                        .clickable {
+                                            selectedImage = it
+                                            showDialog = true
+                                        }
+                                )
+                                IconButton(
+                                    onClick = {
+                                        deleteImage(imagePath) // Slette funksjonen
+                                    },
+                                    modifier = Modifier.padding(start = 8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete Image",
+                                        tint = Color.Red
+                                    )
                                 }
-                        )
+                            }
+                        }
                     }
                     item {
                         Spacer(modifier = Modifier.height(120.dp))
@@ -160,12 +226,11 @@ class DinnerListActivity : ComponentActivity() {
                 }
             }
 
-            // Floating Action Button for adding new images
             IconButton(
                 onClick = { openCamera(context) },
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 40.dp)
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 90.dp)
                     .size(56.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primary,
@@ -180,15 +245,15 @@ class DinnerListActivity : ComponentActivity() {
                 )
             }
 
-            // Bottom navigation bar
-            BottomNavigationBarForDinnerList(
-                activeIcon = activeIcon,
+            BottomNavigationBar(
+                navController = navController,
+                activeIcon = remember { mutableStateOf("dinner") },
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .height(80.dp)
             )
 
-            // Full-screen image dialog
             if (showDialog && selectedImage != null) {
                 FullScreenImageDialog(bitmap = selectedImage!!) {
                     showDialog = false
@@ -197,89 +262,84 @@ class DinnerListActivity : ComponentActivity() {
             }
         }
     }
-}
-@Composable
-fun BottomNavigationBarForDinnerList(
-    activeIcon: MutableState<String>,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(80.dp) // Set the height to ensure it’s consistent
-            .background(MaterialTheme.colorScheme.secondary)
-            .padding(horizontal = 24.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically // Center the icons vertically
+    private fun deleteImage(imagePath: String) {
+        val file = File(imagePath)
+        if (file.exists()) {
+            file.delete() // Slett filen
+        }
+        capturedImages = capturedImages.filter { it != imagePath } // Fjern fra listen
+        saveImagesToStorage(capturedImages) // Oppdater lagret liste
+    }
+
+
+
+    private fun loadBitmapFromFile(path: String): Bitmap? {
+        return try {
+            val file = File(path)
+            if (file.exists()) {
+                BitmapFactory.decodeStream(FileInputStream(file))
+            } else {
+                null
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun openCamera(context: Context) {
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        cameraLauncher.launch(intent)
+    }
+
+    @Composable
+    fun BottomNavigationBar(
+        navController: NavHostController,
+        activeIcon: MutableState<String>,
+        modifier: Modifier = Modifier
     ) {
-        // Menu Icon
-        Icon(
-            imageVector = Icons.Default.Menu,
-            contentDescription = "Menu",
-            tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
-            modifier = Modifier
-                .size(36.dp) // Adjust icon size
-                .clickable {
-                    activeIcon.value = "menu"
-                    val culinaireIntent = Intent(context, Culinaire::class.java)
-                    context.startActivity(culinaireIntent)
-                }
-        )
+        val context = LocalContext.current
 
-        // Dinner List Icon
-        Icon(
-            imageVector = Icons.Default.Person,
-            contentDescription = "Dinner",
-            tint = if (activeIcon.value == "dinner") Color.White else Color.Gray,
-            modifier = Modifier
-                .size(36.dp)
-                .clickable {
-                    activeIcon.value = "dinner"
-                }
-        )
+        Row(
+            modifier = modifier
+                .background(MaterialTheme.colorScheme.secondary)
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Menu,
+                contentDescription = "Menu",
+                tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clickable {
+                        startCulinaireActivity(context)
+                    }
+            )
 
-        // Settings Icon
-        Icon(
-            imageVector = Icons.Default.Settings,
-            contentDescription = "Logg ut",
-            tint = if (activeIcon.value == "setting") MaterialTheme.colorScheme.primary else Color.Gray,
-            modifier = Modifier
-                .size(36.dp)
-                .clickable {
-                    FirebaseAuth.getInstance().signOut()
-                    val loginIntent = Intent(context, Login::class.java)
-                    context.startActivity(loginIntent)
-                    (context as? Activity)?.finishAffinity()
-                }
-        )
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Dinner",
+                tint = if (activeIcon.value == "dinner") Color.White else Color.Gray,
+                modifier = Modifier
+                    .size(32.dp)
+                    .clickable {
+                        activeIcon.value = "dinner"
+                    }
+            )
+
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Settings",
+                tint = if (activeIcon.value == "settings") MaterialTheme.colorScheme.primary else Color.Gray,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clickable {
+                        startSettingsActivity(context)
+                    }
+            )
+        }
     }
 }
-
-@Composable
-fun FullScreenImageDialog(
-    bitmap: Bitmap,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false), // Make it take full width
-        title = null,
-        text = {
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Full-Screen Image",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(500.dp) // Adjust height as needed
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
-            }
-        }
-    )
-}
-
