@@ -95,6 +95,8 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
                 // Check if email or password fields are empty
                 if (email.isBlank() || password.isBlank()) {
                     Toast.makeText(context, "Please enter both email and password", Toast.LENGTH_SHORT).show()
+                    //Fjern i fremtiden, internett problem så sliter med login
+                    navController.navigate("culinaire")
                 } else {
                     // Handle login if fields are filled
                     auth.signInWithEmailAndPassword(email, password)
