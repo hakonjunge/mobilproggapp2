@@ -54,6 +54,7 @@ fun CulinaireNavigation() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = viewModel()) {
     val context = LocalContext.current
@@ -66,160 +67,193 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
     val gptResponse by viewModel.gptResponse.collectAsState(initial = "") // Start with empty string
     val coroutineScope = rememberCoroutineScope()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Text(
-                text = stringResource(id = R.string.choose_ingredients_and_time),
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-
-            // Time Slider
-            Text(
-                text = "${stringResource(id = R.string.time)}: ${selectedTime.toInt()} min",
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Slider(
-                value = selectedTime,
-                onValueChange = { selectedTime = it },
-                valueRange = 0f..60f,
-                steps = 59,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp)
-            )
-
-            // TextField for Available Ingredients
-            OutlinedTextField(
-                value = selectedIngredients,
-                onValueChange = { selectedIngredients = it },
-                label = { Text(stringResource(id = R.string.available_ingredients)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            )
-
-            // TextField for Allergies (Optional)
-            OutlinedTextField(
-                value = allergiesInfo,
-                onValueChange = { allergiesInfo = it },
-                label = { Text(stringResource(id = R.string.allergies_optional)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Button Row for Actions
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            val ingredients = selectedIngredients.split(",").map { it.trim() }
-                            coroutineScope.launch {
-                                viewModel.fetchRecipe(
-                                    context,
-                                    ingredients,
-                                    selectedTime.toInt(),
-                                    allergiesInfo
-                                )
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize()
+    // Scaffold for layout with a TopAppBar
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight() // Fyll hele høyden av TopAppBar
+                            .padding(vertical = 8.dp), // Juster vertikal plassering
+                        contentAlignment = Alignment.Center // Sentrer innholdet i høyden
                     ) {
-                        Text(stringResource(id = R.string.generate_recipe))
+                        Text(
+                            text = "CulinAire",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontSize = 26.sp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
                     }
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            Log.d("CulinaireScreen", "Navigating to ViewOldRecipe")
-                            startViewOldRecipeActivity(context)
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Text(stringResource(id = R.string.view_previous_recipes))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = gptResponse,
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
-                modifier = Modifier.padding(vertical = 8.dp)
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                modifier = Modifier.height(56.dp)
             )
         }
-
-        // Centered and Balanced Bottom Navigation Bar
-        Box(
+    ) { innerPadding ->
+        // Existing content goes here with padding
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .background(MaterialTheme.colorScheme.secondary)
-                .padding(horizontal = 24.dp, vertical = 12.dp),
-            contentAlignment = Alignment.Center // This centers the content of the Box
+                .fillMaxSize()
+                .padding(innerPadding)
         ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
             ) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Menu",
-                    tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clickable { activeIcon.value = "menu" }
+                Text(
+                    text = stringResource(id = R.string.choose_ingredients_and_time),
+                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
+                    modifier = Modifier.padding(vertical = 16.dp)
                 )
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profile",
-                    tint = if (activeIcon.value == "profile") MaterialTheme.colorScheme.primary else Color.Gray,
+
+                // Time Slider
+                Text(
+                    text = "${stringResource(id = R.string.time)}: ${selectedTime.toInt()} min",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Slider(
+                    value = selectedTime,
+                    onValueChange = { selectedTime = it },
+                    valueRange = 0f..60f,
+                    steps = 59,
                     modifier = Modifier
-                        .size(36.dp)
-                        .clickable {
-                            activeIcon.value = "profile"
-                            startDinnerListActivity(context)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                )
+
+                // TextField for Available Ingredients
+                OutlinedTextField(
+                    value = selectedIngredients,
+                    onValueChange = { selectedIngredients = it },
+                    label = { Text(stringResource(id = R.string.available_ingredients)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+
+                // TextField for Allergies (Optional)
+                OutlinedTextField(
+                    value = allergiesInfo,
+                    onValueChange = { allergiesInfo = it },
+                    label = { Text(stringResource(id = R.string.allergies_optional)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Button Row for Actions
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                val ingredients = selectedIngredients.split(",").map { it.trim() }
+                                coroutineScope.launch {
+                                    viewModel.fetchRecipe(
+                                        context,
+                                        ingredients,
+                                        selectedTime.toInt(),
+                                        allergiesInfo
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text(stringResource(id = R.string.generate_recipe))
                         }
-                )
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings",
-                    tint = if (activeIcon.value == "settings") MaterialTheme.colorScheme.primary else Color.Gray,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clickable {
-                            startSettingsActivity(context)
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                Log.d("CulinaireScreen", "Navigating to ViewOldRecipe")
+                                startViewOldRecipeActivity(context)
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text(stringResource(id = R.string.view_previous_recipes))
                         }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = gptResponse,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
+            }
+
+            // Centered and Balanced Bottom Navigation Bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .background(MaterialTheme.colorScheme.secondary)
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center // This centers the content of the Box
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Menu",
+                        tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clickable { activeIcon.value = "menu" }
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = if (activeIcon.value == "profile") MaterialTheme.colorScheme.primary else Color.Gray,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clickable {
+                                activeIcon.value = "profile"
+                                startDinnerListActivity(context)
+                            }
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
+                        tint = if (activeIcon.value == "settings") MaterialTheme.colorScheme.primary else Color.Gray,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clickable {
+                                startSettingsActivity(context)
+                            }
+                    )
+                }
             }
         }
     }
