@@ -107,18 +107,31 @@ class DinnerListActivity : ComponentActivity() {
     }
 
     private fun loadSavedImages() {
+        val user = FirebaseAuth.getInstance().currentUser
         val sharedPreferences = getSharedPreferences("image_storage", Context.MODE_PRIVATE)
-        val imagePaths = sharedPreferences.getStringSet("image_paths", emptySet()) ?: emptySet()
-        capturedImages = imagePaths.toList()
+
+        if (user != null) {
+            val userKey = "image_paths_${user.uid}" // User-specific key
+            val imagePaths = sharedPreferences.getStringSet(userKey, emptySet()) ?: emptySet()
+            capturedImages = imagePaths.toList()
+        } else {
+            capturedImages = emptyList()
+        }
     }
 
     private fun saveImagesToStorage(images: List<String>) {
+        val user = FirebaseAuth.getInstance().currentUser
         val sharedPreferences = getSharedPreferences("image_storage", Context.MODE_PRIVATE)
-        with(sharedPreferences.edit()) {
-            putStringSet("image_paths", images.toSet())
-            apply()
+
+        if (user != null) {
+            val userKey = "image_paths_${user.uid}" // User-specific key
+            with(sharedPreferences.edit()) {
+                putStringSet(userKey, images.toSet())
+                apply()
+            }
         }
     }
+
 
     @Composable
     fun FullScreenImageDialog(

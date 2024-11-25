@@ -12,7 +12,8 @@ import com.example.myapplication.BuildConfig
 @OptIn(BetaOpenAI::class)
 class GPTService {
 
-    private val openAI by lazy { OpenAI(BuildConfig.OPENAI_API_KEY) }
+    // Use BuildConfig to get the API key securely
+    private val openAI = OpenAI(BuildConfig.OPENAI_API_KEY)
 
     suspend fun getRecipeResponse(query: String): String? {
         return try {
