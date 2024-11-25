@@ -42,7 +42,6 @@ import com.example.myapplication.R // Importér R-filen for å kunne bruke strin
 class Culinaire : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
                 CulinaireNavigation()
@@ -140,7 +139,12 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                         onClick = {
                             val ingredients = selectedIngredients.split(",").map { it.trim() }
                             coroutineScope.launch {
-                                viewModel.fetchRecipe(context, ingredients, selectedTime.toInt(), allergiesInfo)
+                                viewModel.fetchRecipe(
+                                    context,
+                                    ingredients,
+                                    selectedTime.toInt(),
+                                    allergiesInfo
+                                )
                             }
                         },
                         modifier = Modifier.fillMaxSize()
@@ -183,7 +187,8 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                 .fillMaxWidth()
                 .height(80.dp)
                 .background(MaterialTheme.colorScheme.secondary)
-                .padding(horizontal = 24.dp, vertical = 12.dp)
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            contentAlignment = Alignment.Center // This centers the content of the Box
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -195,7 +200,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                     contentDescription = "Menu",
                     tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
                     modifier = Modifier
-                        .size(36.dp) // Set icon size
+                        .size(36.dp)
                         .clickable { activeIcon.value = "menu" }
                 )
                 Icon(
@@ -216,10 +221,8 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                     modifier = Modifier
                         .size(48.dp)
                         .clickable {
-                            // Start Settings activity when the user clicks on the settings icon
                             startSettingsActivity(context)
                         }
-
                 )
             }
         }

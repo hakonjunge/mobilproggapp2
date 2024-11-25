@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 class Settings : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
                 SettingsScreen() // This is the settings screen for your UI

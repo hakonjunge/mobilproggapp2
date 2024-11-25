@@ -43,7 +43,6 @@ class Login : ComponentActivity() {
             finish() // Close the Login activity
             return
         }
-        enableEdgeToEdge() // Ensure the activity fills the entire screen
 
         setContent {
             MyApplicationTheme {

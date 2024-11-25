@@ -33,6 +33,11 @@
     <string name="generating">Genererer...</string>
     <string name="myDinner">Mine Middager</string>
     <string name="title_activity_settings" translatable="false">Settings</string>
-
-
+    <string name="share">Del</string>
+    <string name="delete_confirmation">Slett oppskrift</string>
+    <string name="delete_message">Er du sikker på at du ønsker å slette oppskriften "%1$s"?</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nei</string>
+    <string name="delete">Slett</string>
+    <string name="previous_recipes">Tidligere oppskrifter</string>
 </resources>

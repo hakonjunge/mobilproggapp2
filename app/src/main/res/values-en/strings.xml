@@ -31,7 +31,12 @@
     <string name="login_failed">Login failed</string>
     <string name="create_account">Create Account</string>
     <string name="myDinner">My Dinners</string>
-
+    <string name="share">Share</string>
     <string name="generating">Generating...</string>
-
+    <string name="delete_confirmation">Delete Recipe</string>
+    <string name="delete_message">Are you sure you want to delete the recipe "%1$s"?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="delete">Delete</string>
+    <string name="previous_recipes">Previous Recipes</string>
 </resources>

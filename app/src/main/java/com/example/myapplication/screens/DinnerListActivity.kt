@@ -63,7 +63,6 @@ class DinnerListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadSavedImages() // Load saved images on launch
-        enableEdgeToEdge()
 
         setContent {
             MyApplicationTheme {
