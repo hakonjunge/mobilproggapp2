@@ -1,4 +1,4 @@
-package com.example.myapplication.screens.gpt
+package com.example.myapplication.backend
 
 import android.content.Context
 import android.util.Log
@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import androidx.compose.ui.res.stringResource
 import com.example.myapplication.R
 import org.json.JSONException
 

@@ -1,4 +1,4 @@
-package com.example.myapplication.screens
+package com.example.myapplication.view
 
 import android.content.Context
 import android.content.Intent
@@ -6,13 +6,10 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -31,9 +28,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.myapplication.screens.gpt.GPTViewModel
+import com.example.myapplication.backend.GPTViewModel
 import com.example.myapplication.ui.theme.MyApplicationTheme
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.example.myapplication.R // Importér R-filen for å kunne bruke string-ressursene

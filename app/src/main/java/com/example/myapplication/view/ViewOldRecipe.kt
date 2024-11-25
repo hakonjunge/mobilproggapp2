@@ -1,4 +1,4 @@
-package com.example.myapplication.screens
+package com.example.myapplication.view
 
 import android.app.Activity
 import android.content.Context
@@ -7,17 +7,11 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import org.json.JSONObject
@@ -253,74 +246,74 @@ fun deleteRecipeFromFirebase(userId: String?, database: FirebaseDatabase, recipe
 
 
 @Composable
-    fun RecipeDetailScreen(recipe: SavedRecipe, onBack: () -> Unit) {
-        val context = LocalContext.current
+fun RecipeDetailScreen(recipe: SavedRecipe, onBack: () -> Unit) {
+    val context = LocalContext.current
 
-        Scaffold(
-            floatingActionButton = {
-                FloatingActionButton(onClick = {
-                    shareRecipe(context, recipe)
-                }) {
-                    Icon(imageVector = Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
-                }
-            },
-            floatingActionButtonPosition = FabPosition.End
-        ) { padding ->
-            Column(
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = {
+                shareRecipe(context, recipe)
+            }) {
+                Icon(imageVector = Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+        ) {
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .padding(start = 0.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 0.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = stringResource(id = R.string.back),
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = stringResource(id = R.string.back),
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = "${stringResource(id = R.string.recipe)}: ${recipe.name}",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp)
-                )
-                Text(
-                    text = "${stringResource(id = R.string.time)}: ${recipe.time} ${stringResource(id = R.string.minutes)}",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
-                    color = Color.Gray
-                )
+            Text(
+                text = "${stringResource(id = R.string.recipe)}: ${recipe.name}",
+                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp)
+            )
+            Text(
+                text = "${stringResource(id = R.string.time)}: ${recipe.time} ${stringResource(id = R.string.minutes)}",
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                color = Color.Gray
+            )
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "${stringResource(id = R.string.ingredients)}:",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                recipe.ingredients.forEach { ingredient ->
-                    Text(text = "- $ingredient", style = MaterialTheme.typography.bodyMedium)
-                }
+            Text(
+                text = "${stringResource(id = R.string.ingredients)}:",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            recipe.ingredients.forEach { ingredient ->
+                Text(text = "- $ingredient", style = MaterialTheme.typography.bodyMedium)
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "${stringResource(id = R.string.description)}:",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                recipe.description.forEachIndexed { index, step ->
-                    Text(text = "${index + 1}. $step", style = MaterialTheme.typography.bodyMedium)
-                }
+            Text(
+                text = "${stringResource(id = R.string.description)}:",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            recipe.description.forEachIndexed { index, step ->
+                Text(text = "${index + 1}. $step", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
+}
 
 fun shareRecipe(context: Context, recipe: SavedRecipe) {
     val shareContent = """

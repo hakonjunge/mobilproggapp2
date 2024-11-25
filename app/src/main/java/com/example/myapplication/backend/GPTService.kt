@@ -1,4 +1,4 @@
-package com.example.myapplication.screens.gpt
+package com.example.myapplication.backend
 
 import android.util.Log
 import com.aallam.openai.api.BetaOpenAI

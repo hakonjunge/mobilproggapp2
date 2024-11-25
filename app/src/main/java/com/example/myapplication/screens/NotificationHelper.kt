@@ -7,8 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
-import com.example.myapplication.screens.Login
-import com.example.myapplication.screens.LoginScreen
+import com.example.myapplication.view.Login
 
 class NotificationHelper(private val context: Context) {
     private val channelId = "recipe_channel"
