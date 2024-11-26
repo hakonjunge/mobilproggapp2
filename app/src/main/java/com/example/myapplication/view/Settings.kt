@@ -100,12 +100,6 @@ fun SettingsScreen() {
                         fontSize = 18.sp
                     )
                 }
-
-                Text(
-                    text = "Configure your preferences here.",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
-                    modifier = Modifier.padding(vertical = 20.dp)
-                )
             }
         }
     )
