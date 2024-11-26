@@ -9,7 +9,6 @@ plugins {
 }
 
 val properties = Properties().apply {
-    load(rootProject.file("local.properties").inputStream())
 }
 
 android {
@@ -25,7 +24,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Use the secret key
-        buildConfigField("String", "OPENAI_API_KEY", "\"${properties["OPENAI_API_KEY"]}\"")
         vectorDrawables {
             useSupportLibrary = true
         }
