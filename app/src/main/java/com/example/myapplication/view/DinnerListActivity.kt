@@ -1,13 +1,5 @@
 package com.example.myapplication.view
 
-import com.google.firebase.storage.FirebaseStorage
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.util.UUID
-
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -38,50 +30,48 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import com.example.myapplication.screens.ui.theme.MyApplicationTheme
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.auth.FirebaseAuth
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.NavHostController
 import com.example.myapplication.R
 import com.example.myapplication.backend.Navigation
+import com.example.myapplication.screens.ui.theme.MyApplicationTheme
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import java.io.File
 import java.io.FileInputStream
-
-data class Dinner(val description: String, val imageUrl: String)
+import java.io.FileOutputStream
+import java.io.IOException
+import java.util.UUID
 
 class DinnerListActivity : ComponentActivity() {
     private val firestore = FirebaseFirestore.getInstance()
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
-    private var capturedImages by mutableStateOf<List<String>>(emptyList()) // Store file paths
+    private var capturedImages by mutableStateOf<List<String>>(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        loadSavedImages() // Load saved images on launch
+        loadSavedImages()
 
         setContent {
             MyApplicationTheme {
-            }}
+                DinnerListScreen()
+            }
+        }
 
-        cameraLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val bitmap = result.data?.extras?.get("data") as? Bitmap
-                    bitmap?.let {
-                        val imagePath = saveBitmapToFile(this, it)
-                        if (imagePath != null) {
-                            capturedImages = capturedImages + imagePath
-                            saveImagesToStorage(capturedImages) // Save image paths
-                        } else {
-                            Log.e("ImageStorage", "Failed to save image.")
-                        }
+        cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val bitmap = result.data?.extras?.get("data") as? Bitmap
+                bitmap?.let {
+                    val imagePath = saveBitmapToFile(this, it)
+                    if (imagePath != null) {
+                        capturedImages = capturedImages + imagePath
+                        saveImagesToStorage(capturedImages)
+                    } else {
+                        Log.e("ImageStorage", "Failed to save image.")
                     }
                 }
             }
+        }
     }
 
     private fun saveBitmapToFile(context: Context, bitmap: Bitmap): String? {
@@ -89,16 +79,14 @@ class DinnerListActivity : ComponentActivity() {
         val dir = context.getExternalFilesDir("images")
         val file = File(dir, filename)
 
-        var fileOutputStream: FileOutputStream? = null
         return try {
-            fileOutputStream = FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
+            FileOutputStream(file).use { output ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output)
+            }
             file.absolutePath
         } catch (e: IOException) {
             e.printStackTrace()
             null
-        } finally {
-            fileOutputStream?.close()
         }
     }
 
@@ -107,7 +95,7 @@ class DinnerListActivity : ComponentActivity() {
         val sharedPreferences = getSharedPreferences("image_storage", Context.MODE_PRIVATE)
 
         if (user != null) {
-            val userKey = "image_paths_${user.uid}" // User-specific key
+            val userKey = "image_paths_${user.uid}"
             val imagePaths = sharedPreferences.getStringSet(userKey, emptySet()) ?: emptySet()
             capturedImages = imagePaths.toList()
         } else {
@@ -120,7 +108,7 @@ class DinnerListActivity : ComponentActivity() {
         val sharedPreferences = getSharedPreferences("image_storage", Context.MODE_PRIVATE)
 
         if (user != null) {
-            val userKey = "image_paths_${user.uid}" // User-specific key
+            val userKey = "image_paths_${user.uid}"
             with(sharedPreferences.edit()) {
                 putStringSet(userKey, images.toSet())
                 apply()
@@ -128,59 +116,27 @@ class DinnerListActivity : ComponentActivity() {
         }
     }
 
-
     @Composable
-    fun FullScreenImageDialog(
-        bitmap: Bitmap,
-        onDismiss: () -> Unit
-    ) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-            title = null,
-            text = {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Full-Screen Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(500.dp)
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Close")
-                }
-            }
-        )
-    }
-
-
-
-    @Composable
-    fun DinnerListScreen(navController: NavHostController) {
+    fun DinnerListScreen() {
         var showDialog by remember { mutableStateOf(false) }
         var selectedImage by remember { mutableStateOf<Bitmap?>(null) }
         val context = LocalContext.current
-
-        // Fetch theme-based colors
-        val backgroundColor = MaterialTheme.colorScheme.background
-        val textColor = MaterialTheme.colorScheme.onBackground
+        val activeIcon = remember { mutableStateOf("dinner") } // Aktivt ikon i navigasjonsbaren
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(backgroundColor) // Set background color
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .padding(16.dp)
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopCenter) // Innhold øverst i skjermen
             ) {
                 Text(
-                    text = stringResource(id = R.string.myDinner),
-                    style = MaterialTheme.typography.headlineMedium.copy(color = textColor),
+                    text = "My Dinners",
+                    style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
@@ -210,9 +166,7 @@ class DinnerListActivity : ComponentActivity() {
                                         }
                                 )
                                 IconButton(
-                                    onClick = {
-                                        deleteImage(imagePath)
-                                    },
+                                    onClick = { deleteImage(imagePath) },
                                     modifier = Modifier.padding(start = 8.dp)
                                 ) {
                                     Icon(
@@ -224,17 +178,15 @@ class DinnerListActivity : ComponentActivity() {
                             }
                         }
                     }
-                    item {
-                        Spacer(modifier = Modifier.height(120.dp))
-                    }
                 }
             }
 
+            // Kamera-knapp i midten, over navigasjonsbaren
             IconButton(
                 onClick = { openCamera(context) },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 90.dp)
+                    .padding(bottom = 90.dp) // Løfter den over navigasjonsbaren
                     .size(56.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primary,
@@ -249,15 +201,13 @@ class DinnerListActivity : ComponentActivity() {
                 )
             }
 
+            // Navigasjonslinje nederst
             BottomNavigationBar(
-                navController = navController,
-                activeIcon = remember { mutableStateOf("dinner") },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(80.dp)
+                activeIcon = activeIcon,
+                modifier = Modifier.align(Alignment.BottomCenter) // Festet til bunnen
             )
 
+            // Dialog for å vise bilder i fullskjerm
             if (showDialog && selectedImage != null) {
                 FullScreenImageDialog(bitmap = selectedImage!!) {
                     showDialog = false
@@ -266,26 +216,42 @@ class DinnerListActivity : ComponentActivity() {
             }
         }
     }
-
+    @Composable
+    fun FullScreenImageDialog(
+        bitmap: Bitmap,
+        onDismiss: () -> Unit
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+            title = null,
+            text = {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = "Full-Screen Image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(500.dp)
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Close")
+                }
+            }
+        )
+    }
     private fun deleteImage(imagePath: String) {
         val file = File(imagePath)
-        if (file.exists()) {
-            file.delete() // Slett filen
-        }
-        capturedImages = capturedImages.filter { it != imagePath } // Fjern fra listen
-        saveImagesToStorage(capturedImages) // Oppdater lagret liste
+        if (file.exists()) file.delete()
+        capturedImages = capturedImages.filter { it != imagePath }
+        saveImagesToStorage(capturedImages)
     }
-
-
 
     private fun loadBitmapFromFile(path: String): Bitmap? {
         return try {
             val file = File(path)
-            if (file.exists()) {
-                BitmapFactory.decodeStream(FileInputStream(file))
-            } else {
-                null
-            }
+            if (file.exists()) BitmapFactory.decodeStream(FileInputStream(file)) else null
         } catch (e: IOException) {
             e.printStackTrace()
             null
@@ -297,16 +263,18 @@ class DinnerListActivity : ComponentActivity() {
         cameraLauncher.launch(intent)
     }
 
+
     @Composable
     fun BottomNavigationBar(
-        navController: NavHostController,
         activeIcon: MutableState<String>,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier // Sørg for å inkludere dette parameteret
     ) {
         val context = LocalContext.current
 
         Row(
             modifier = modifier
+                .fillMaxWidth()
+                .height(80.dp)
                 .background(MaterialTheme.colorScheme.secondary)
                 .padding(horizontal = 24.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -315,34 +283,25 @@ class DinnerListActivity : ComponentActivity() {
             Icon(
                 imageVector = Icons.Default.Menu,
                 contentDescription = "Menu",
-                tint = if (activeIcon.value == "menu") MaterialTheme.colorScheme.onSecondary else Color.Gray,
+                tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
                 modifier = Modifier
-                    .size(48.dp)
-                    .clickable {
-                        Navigation.startCulinaireActivity(context)
-                    }
+                    .size(36.dp)
+                    .clickable { Navigation.startCulinaireActivity(context) }
             )
-
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "Dinner",
-                tint = if (activeIcon.value == "dinner") MaterialTheme.colorScheme.onSecondary else Color.Gray,
+                tint = if (activeIcon.value == "dinner") MaterialTheme.colorScheme.primary else Color.Gray,
                 modifier = Modifier
-                    .size(32.dp)
-                    .clickable {
-                        activeIcon.value = "dinner"
-                    }
+                    .size(36.dp)
             )
-
             Icon(
                 imageVector = Icons.Default.Settings,
                 contentDescription = "Settings",
                 tint = if (activeIcon.value == "settings") MaterialTheme.colorScheme.primary else Color.Gray,
                 modifier = Modifier
-                    .size(48.dp)
-                    .clickable {
-                        Navigation.startSettingsActivity(context)
-                    }
+                    .size(36.dp)
+                    .clickable { Navigation.startSettingsActivity(context) }
             )
         }
     }

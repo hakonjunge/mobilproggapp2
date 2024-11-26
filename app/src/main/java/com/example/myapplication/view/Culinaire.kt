@@ -2,7 +2,6 @@ package com.example.myapplication.view
 
 import android.Manifest
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -26,29 +25,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.backend.GPTViewModel
 import com.example.myapplication.notifications.ReminderReceiver
 import com.example.myapplication.ui.theme.MyApplicationTheme
-import kotlinx.coroutines.launch
-import androidx.compose.ui.res.stringResource
 import com.example.myapplication.R
 import com.example.myapplication.backend.Navigation
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import com.example.myapplication.backend.Navigation.*
 
 class Culinaire : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Request POST_NOTIFICATIONS permission for Android 13+ devices
+        // Be om POST_NOTIFICATIONS-tillatelse for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
@@ -65,26 +59,18 @@ class Culinaire : ComponentActivity() {
 
         setContent {
             MyApplicationTheme {
-                CulinaireNavigation()
+                CulinaireScreen()
             }
         }
     }
 }
 
-@Composable
-fun CulinaireNavigation() {
-    val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "culinaire") {
-        composable("culinaire") { CulinaireScreen(navController = navController) }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = viewModel()) {
+fun CulinaireScreen(viewModel: GPTViewModel = viewModel()) {
     val context = LocalContext.current
 
-    // Check for first launch of the day and show notification
+    // Sjekk om dette er første oppstart for dagen og vis varsel
     LaunchedEffect(Unit) {
         checkFirstLaunchOfDay(context)
     }
@@ -141,7 +127,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
 
-                // Time Slider
+                // Tidsvelger
                 Text(
                     text = "${stringResource(id = R.string.time)}: ${selectedTime.toInt()} min",
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
@@ -157,7 +143,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                         .padding(horizontal = 24.dp, vertical = 8.dp)
                 )
 
-                // TextField for Available Ingredients
+                // Ingrediensinput
                 OutlinedTextField(
                     value = selectedIngredients,
                     onValueChange = { selectedIngredients = it },
@@ -167,7 +153,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                         .padding(vertical = 8.dp)
                 )
 
-                // TextField for Allergies (Optional)
+                // Allergiinput (valgfritt)
                 OutlinedTextField(
                     value = allergiesInfo,
                     onValueChange = { allergiesInfo = it },
@@ -180,7 +166,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Button Row for Actions
+                // Handlinger
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -238,7 +224,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                 )
             }
 
-            // Centered and Balanced Bottom Navigation Bar
+            // Navigasjonslinje
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -287,8 +273,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
     }
 }
 
-
-
+// Hjelpefunksjon for å vise varsler
 fun checkFirstLaunchOfDay(context: Context) {
     val sharedPreferences = context.getSharedPreferences("CulinairePrefs", Context.MODE_PRIVATE)
     val lastLaunchDate = sharedPreferences.getString("lastLaunchDate", null)
