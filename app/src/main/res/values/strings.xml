@@ -40,4 +40,6 @@
     <string name="no">Nei</string>
     <string name="delete">Slett</string>
     <string name="previous_recipes">Tidligere oppskrifter</string>
+    <string name="notification_title">Velkommen til Culinaire</string>
+    <string name="notification_text">Bruk AI for å planlegge middagen din</string>
 </resources>

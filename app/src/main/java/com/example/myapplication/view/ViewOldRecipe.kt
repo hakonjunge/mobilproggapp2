@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -59,16 +60,12 @@ fun ViewOldRecipeScreen() {
             errorMessage = context.getString(R.string.no_user)
             Log.d("ViewOldRecipeScreen", errorMessage ?: "No user error message available")
         } else {
-            Log.d(
-                "ViewOldRecipeScreen",
-                "User logged in with UID: $userId. Attempting to fetch data."
-            )
             database.getReference("users/$userId/saved_recipes").get()
                 .addOnSuccessListener { dataSnapshot ->
                     val recipeList = mutableListOf<SavedRecipe>()
                     dataSnapshot.children.forEach { child ->
                         val jsonString = child.getValue(String::class.java)
-                        val key = child.key ?: return@forEach // Get the Firebase key
+                        val key = child.key ?: return@forEach
                         jsonString?.let {
                             try {
                                 val jsonObject = JSONObject(it)
@@ -84,7 +81,7 @@ fun ViewOldRecipeScreen() {
                                     }
                                 } ?: emptyList()
                                 val time = jsonObject.optInt("time", 0)
-                                recipeList.add(SavedRecipe(key, name, ingredients, description, time)) // Add the key
+                                recipeList.add(SavedRecipe(key, name, ingredients, description, time))
                             } catch (e: Exception) {
                                 Log.e("ViewOldRecipeScreen", "Error parsing JSON: ${e.message}")
                             }
@@ -94,18 +91,25 @@ fun ViewOldRecipeScreen() {
                 }
                 .addOnFailureListener {
                     errorMessage = "${context.getString(R.string.fetch_error)} ${it.message}"
-                    Log.e("ViewOldRecipeScreen", errorMessage ?: "Unknown fetch error")
                 }
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Back button styled and placed consistently with RecipeDetailScreen
+    // Set the background color based on the current theme
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val textColor = MaterialTheme.colorScheme.onBackground
+
+    // Main layout with background
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor)
+    ) {
         if (selectedRecipe == null) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 8.dp), // Proper padding
+                    .padding(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
@@ -118,25 +122,23 @@ fun ViewOldRecipeScreen() {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = stringResource(id = R.string.back),
-                        modifier = Modifier.size(32.dp)
+                        tint = textColor
                     )
                 }
             }
 
-            // Add spacing below the back button to avoid overlapping with the header
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Header for "Previous Recipes"
             Text(
-                text = stringResource(id = R.string.previous_recipes), // Or hardcode "Previous Recipes"
+                text = stringResource(id = R.string.previous_recipes),
                 style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
+                color = textColor,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 16.dp, top = 8.dp, bottom = 16.dp)
             )
         }
 
-        // Rest of your content
         if (selectedRecipe != null) {
             RecipeDetailScreen(
                 recipe = selectedRecipe!!,
@@ -155,21 +157,16 @@ fun ViewOldRecipeScreen() {
                         onDelete = { recipeToDelete = it }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Divider()
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Divider(color = MaterialTheme.colorScheme.onSurface)
                 }
             }
 
-            // Delete confirmation dialog
             if (recipeToDelete != null) {
                 DeleteRecipeDialog(
                     recipe = recipeToDelete!!,
                     onConfirm = {
                         deleteRecipeFromFirebase(userId, database, recipeToDelete!!.key)
-                        recipes = recipes.filter { it.key != recipeToDelete!!.key } // Remove from UI
+                        recipes = recipes.filter { it.key != recipeToDelete!!.key }
                         recipeToDelete = null
                     },
                     onDismiss = { recipeToDelete = null }
@@ -180,6 +177,8 @@ fun ViewOldRecipeScreen() {
 }
 @Composable
 fun RecipeItem(recipe: SavedRecipe, onClick: () -> Unit, onDelete: (SavedRecipe) -> Unit) {
+    val textColor = MaterialTheme.colorScheme.onBackground // Dynamisk tekstfarge basert på tema
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -190,19 +189,25 @@ fun RecipeItem(recipe: SavedRecipe, onClick: () -> Unit, onDelete: (SavedRecipe)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = recipe.name,
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp)
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontSize = 20.sp,
+                    color = textColor // Tilpass tekstfargen til temaet
+                )
             )
             Text(
                 text = "${stringResource(id = R.string.time)}: ${recipe.time} ${stringResource(id = R.string.minutes)}",
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp),
-                color = Color.Gray
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 16.sp,
+                    color = textColor.copy(alpha = 0.7f) // Gjør teksten litt lysere
+                )
             )
         }
 
         IconButton(onClick = { onDelete(recipe) }) {
             Icon(
                 imageVector = Icons.Default.Delete,
-                contentDescription = stringResource(id = R.string.delete)
+                contentDescription = stringResource(id = R.string.delete),
+                tint = Color.Red // Sett slett-knappen til å være konstant rød
             )
         }
     }

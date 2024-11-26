@@ -18,7 +18,11 @@ import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import com.example.myapplication.preferences.ThemePreferences
+import kotlinx.coroutines.launch
 
 class Settings : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,31 +39,30 @@ class Settings : ComponentActivity() {
 fun SettingsScreen() {
     val context = LocalContext.current
     val activity = context as? Activity  // Cast the context to Activity
+    val isDarkModeEnabled = ThemePreferences.isDarkModeEnabled(context).collectAsState(initial = false)
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
-            // Replace TopAppBar with custom Surface and set background color to gray
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.secondary  // Set the top bar's background to gray
+                color = MaterialTheme.colorScheme.secondary
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp) // Add padding around the title
+                        .padding(16.dp)
                 ) {
-                    // Back arrow icon aligned to the left
                     IconButton(
-                        onClick = { activity?.finish() }, // Close current activity
+                        onClick = { activity?.finish() },
                         modifier = Modifier.align(Alignment.CenterStart)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack, // Use built-in arrow back icon
+                            imageVector = Icons.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = Color.White
                         )
                     }
-                    // Settings title centered in the Box
                     Text(
                         text = "Settings",
                         fontSize = 20.sp,
@@ -71,7 +74,7 @@ fun SettingsScreen() {
             }
         },
         bottomBar = {
-            BottomBar() // This is the button to log out
+            BottomBar()
         },
         content = { innerPadding ->
             Column(
@@ -80,7 +83,24 @@ fun SettingsScreen() {
                     .padding(innerPadding)
                     .padding(16.dp)
             ) {
-                // Add any settings UI elements here (like checkboxes, switches, etc.)
+                // Dark Mode Toggle Button
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            ThemePreferences.setDarkMode(context, !isDarkModeEnabled.value)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                        .height(56.dp),
+                ) {
+                    Text(
+                        text = if (isDarkModeEnabled.value) "Disable Dark Mode" else "Enable Dark Mode",
+                        fontSize = 18.sp
+                    )
+                }
+
                 Text(
                     text = "Configure your preferences here.",
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),

@@ -1,11 +1,16 @@
 package com.example.myapplication.view
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,15 +34,33 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.backend.GPTViewModel
+import com.example.myapplication.notifications.ReminderReceiver
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
-import com.example.myapplication.R // Importér R-filen for å kunne bruke string-ressursene
-
+import com.example.myapplication.R
+import java.text.SimpleDateFormat
+import java.util.*
 
 class Culinaire : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Request POST_NOTIFICATIONS permission for Android 13+ devices
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    1
+                )
+            }
+        }
+
         setContent {
             MyApplicationTheme {
                 CulinaireNavigation()
@@ -59,24 +82,28 @@ fun CulinaireNavigation() {
 fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = viewModel()) {
     val context = LocalContext.current
 
+    // Check for first launch of the day and show notification
+    LaunchedEffect(Unit) {
+        checkFirstLaunchOfDay(context)
+    }
+
     var selectedIngredients by remember { mutableStateOf("") }
     var allergiesInfo by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf(0f) }
-    val activeIcon = remember { mutableStateOf("menu") } // Track active icon for bottom menu
+    val activeIcon = remember { mutableStateOf("menu") }
 
-    val gptResponse by viewModel.gptResponse.collectAsState(initial = "") // Start with empty string
+    val gptResponse by viewModel.gptResponse.collectAsState(initial = "")
     val coroutineScope = rememberCoroutineScope()
 
-    // Scaffold for layout with a TopAppBar
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Box(
                         modifier = Modifier
-                            .fillMaxHeight() // Fyll hele høyden av TopAppBar
-                            .padding(vertical = 8.dp), // Juster vertikal plassering
-                        contentAlignment = Alignment.Center // Sentrer innholdet i høyden
+                            .fillMaxHeight()
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "CulinAire",
@@ -94,7 +121,6 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
             )
         }
     ) { innerPadding ->
-        // Existing content goes here with padding
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -217,7 +243,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                     .height(80.dp)
                     .background(MaterialTheme.colorScheme.secondary)
                     .padding(horizontal = 24.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center // This centers the content of the Box
+                contentAlignment = Alignment.Center
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -259,19 +285,28 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
     }
 }
 
-// Function to start DinnerListActivity
 fun startDinnerListActivity(context: Context) {
     val intent = Intent(context, DinnerListActivity::class.java)
     context.startActivity(intent)
 }
 
-
 fun startViewOldRecipeActivity(context: Context) {
     val intent = Intent(context, ViewOldRecipe::class.java)
     context.startActivity(intent)
-}// Funksjon for å starte DinnerListActivity
+}
 
 fun startSettingsActivity(context: Context) {
     val intent = Intent(context, Settings::class.java)
     context.startActivity(intent)
+}
+
+fun checkFirstLaunchOfDay(context: Context) {
+    val sharedPreferences = context.getSharedPreferences("CulinairePrefs", Context.MODE_PRIVATE)
+    val lastLaunchDate = sharedPreferences.getString("lastLaunchDate", null)
+    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+    if (lastLaunchDate != currentDate) {
+        sharedPreferences.edit().putString("lastLaunchDate", currentDate).apply()
+        ReminderReceiver().sendNotification(context)
+    }
 }

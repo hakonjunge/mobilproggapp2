@@ -1,10 +1,13 @@
 package com.example.myapplication.view
 
+import com.google.firebase.storage.FirebaseStorage
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.UUID
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -37,10 +40,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.example.myapplication.screens.ui.theme.MyApplicationTheme
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.auth.FirebaseAuth
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -106,18 +109,31 @@ class DinnerListActivity : ComponentActivity() {
     }
 
     private fun loadSavedImages() {
+        val user = FirebaseAuth.getInstance().currentUser
         val sharedPreferences = getSharedPreferences("image_storage", Context.MODE_PRIVATE)
-        val imagePaths = sharedPreferences.getStringSet("image_paths", emptySet()) ?: emptySet()
-        capturedImages = imagePaths.toList()
+
+        if (user != null) {
+            val userKey = "image_paths_${user.uid}" // User-specific key
+            val imagePaths = sharedPreferences.getStringSet(userKey, emptySet()) ?: emptySet()
+            capturedImages = imagePaths.toList()
+        } else {
+            capturedImages = emptyList()
+        }
     }
 
     private fun saveImagesToStorage(images: List<String>) {
+        val user = FirebaseAuth.getInstance().currentUser
         val sharedPreferences = getSharedPreferences("image_storage", Context.MODE_PRIVATE)
-        with(sharedPreferences.edit()) {
-            putStringSet("image_paths", images.toSet())
-            apply()
+
+        if (user != null) {
+            val userKey = "image_paths_${user.uid}" // User-specific key
+            with(sharedPreferences.edit()) {
+                putStringSet(userKey, images.toSet())
+                apply()
+            }
         }
     }
+
 
     @Composable
     fun FullScreenImageDialog(
@@ -161,7 +177,15 @@ class DinnerListActivity : ComponentActivity() {
         var selectedImage by remember { mutableStateOf<Bitmap?>(null) }
         val context = LocalContext.current
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        // Fetch theme-based colors
+        val backgroundColor = MaterialTheme.colorScheme.background
+        val textColor = MaterialTheme.colorScheme.onBackground
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(backgroundColor) // Set background color
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -170,8 +194,8 @@ class DinnerListActivity : ComponentActivity() {
             ) {
                 Text(
                     text = stringResource(id = R.string.myDinner),
-                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    style = MaterialTheme.typography.headlineMedium.copy(color = textColor),
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
 
                 LazyColumn(
@@ -201,14 +225,14 @@ class DinnerListActivity : ComponentActivity() {
                                 )
                                 IconButton(
                                     onClick = {
-                                        deleteImage(imagePath) // Slette funksjonen
+                                        deleteImage(imagePath)
                                     },
                                     modifier = Modifier.padding(start = 8.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
                                         contentDescription = "Delete Image",
-                                        tint = Color.Red
+                                        tint = MaterialTheme.colorScheme.error
                                     )
                                 }
                             }
@@ -234,7 +258,7 @@ class DinnerListActivity : ComponentActivity() {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add New Dinner",
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(36.dp)
                 )
             }
@@ -305,7 +329,7 @@ class DinnerListActivity : ComponentActivity() {
             Icon(
                 imageVector = Icons.Default.Menu,
                 contentDescription = "Menu",
-                tint = if (activeIcon.value == "menu") Color.White else Color.Gray,
+                tint = if (activeIcon.value == "menu") MaterialTheme.colorScheme.onSecondary else Color.Gray,
                 modifier = Modifier
                     .size(48.dp)
                     .clickable {
@@ -316,7 +340,7 @@ class DinnerListActivity : ComponentActivity() {
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "Dinner",
-                tint = if (activeIcon.value == "dinner") Color.White else Color.Gray,
+                tint = if (activeIcon.value == "dinner") MaterialTheme.colorScheme.onSecondary else Color.Gray,
                 modifier = Modifier
                     .size(32.dp)
                     .clickable {

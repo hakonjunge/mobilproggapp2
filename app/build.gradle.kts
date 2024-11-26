@@ -120,4 +120,5 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.androidx.lifecycle.runtime.ktx.v251)
     implementation(libs.androidx.lifecycle.viewmodel.compose.v251)
+    implementation (libs.androidx.datastore.preferences)
 }
