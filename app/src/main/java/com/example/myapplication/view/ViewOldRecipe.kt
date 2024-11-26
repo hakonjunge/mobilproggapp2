@@ -29,7 +29,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.ui.res.stringResource
 import com.example.myapplication.R
-import com.example.myapplication.screens.ui.theme.MyApplicationTheme
+import com.example.myapplication.ui.theme.MyApplicationTheme
 
 class ViewOldRecipe : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
