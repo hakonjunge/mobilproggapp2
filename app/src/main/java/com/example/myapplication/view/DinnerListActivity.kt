@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.example.myapplication.R
@@ -135,7 +136,7 @@ class DinnerListActivity : ComponentActivity() {
                     .align(Alignment.TopCenter) // Innhold øverst i skjermen
             ) {
                 Text(
-                    text = "My Dinners",
+                    text = stringResource(id = R.string.myDinner),
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
