@@ -39,8 +39,10 @@ import com.example.myapplication.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.example.myapplication.R
+import com.example.myapplication.backend.Navigation
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.myapplication.backend.Navigation.*
 
 class Culinaire : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -218,7 +220,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                         Button(
                             onClick = {
                                 Log.d("CulinaireScreen", "Navigating to ViewOldRecipe")
-                                startViewOldRecipeActivity(context)
+                                Navigation.startViewOldRecipeActivity(context)
                             },
                             modifier = Modifier.fillMaxSize()
                         ) {
@@ -266,7 +268,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                             .size(36.dp)
                             .clickable {
                                 activeIcon.value = "profile"
-                                startDinnerListActivity(context)
+                                Navigation.startDinnerListActivity(context)
                             }
                     )
                     Icon(
@@ -276,7 +278,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
                         modifier = Modifier
                             .size(48.dp)
                             .clickable {
-                                startSettingsActivity(context)
+                                Navigation.startSettingsActivity(context)
                             }
                     )
                 }
@@ -285,20 +287,7 @@ fun CulinaireScreen(navController: NavHostController, viewModel: GPTViewModel = 
     }
 }
 
-fun startDinnerListActivity(context: Context) {
-    val intent = Intent(context, DinnerListActivity::class.java)
-    context.startActivity(intent)
-}
 
-fun startViewOldRecipeActivity(context: Context) {
-    val intent = Intent(context, ViewOldRecipe::class.java)
-    context.startActivity(intent)
-}
-
-fun startSettingsActivity(context: Context) {
-    val intent = Intent(context, Settings::class.java)
-    context.startActivity(intent)
-}
 
 fun checkFirstLaunchOfDay(context: Context) {
     val sharedPreferences = context.getSharedPreferences("CulinairePrefs", Context.MODE_PRIVATE)

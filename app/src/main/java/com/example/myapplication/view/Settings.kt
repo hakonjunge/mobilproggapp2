@@ -23,6 +23,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import com.example.myapplication.preferences.ThemePreferences
 import kotlinx.coroutines.launch
+import com.example.myapplication.backend.Navigation
 
 class Settings : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,7 +112,7 @@ fun BottomBar() {
 
     Button(
         onClick = {
-            logOutAndNavigateToLogin(context)  // Pass context here
+            Navigation.logOutAndNavigateToLogin(context)  // Pass context here
         },
         modifier = Modifier
             .fillMaxWidth()
@@ -123,13 +124,6 @@ fun BottomBar() {
     }
 }
 
-fun logOutAndNavigateToLogin(context: Context) {
-    // Log out using Firebase Authentication
-    FirebaseAuth.getInstance().signOut()
 
-    // Navigate to the Login activity
-    val intent = Intent(context, Login::class.java)
-    context.startActivity(intent)
-}
 
 

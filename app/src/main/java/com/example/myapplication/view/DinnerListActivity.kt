@@ -49,6 +49,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.NavHostController
 import com.example.myapplication.R
+import com.example.myapplication.backend.Navigation
 import java.io.FileInputStream
 
 data class Dinner(val description: String, val imageUrl: String)
@@ -64,14 +65,7 @@ class DinnerListActivity : ComponentActivity() {
 
         setContent {
             MyApplicationTheme {
-                val navController = rememberNavController()
-
-                NavHost(navController = navController, startDestination = "dinnerList") {
-                    composable("dinnerList") { DinnerListScreen(navController) }
-                    composable("login") { LoginScreen(navController) }
-                }
-            }
-        }
+            }}
 
         cameraLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -161,15 +155,7 @@ class DinnerListActivity : ComponentActivity() {
         )
     }
 
-    fun startSettingsActivity(context: Context) {
-        val intent = Intent(context, Settings::class.java)
-        context.startActivity(intent)
-    }
 
-    fun startCulinaireActivity(context: Context) {
-        val intent = Intent(context, Culinaire::class.java)
-        context.startActivity(intent)
-    }
 
     @Composable
     fun DinnerListScreen(navController: NavHostController) {
@@ -333,7 +319,7 @@ class DinnerListActivity : ComponentActivity() {
                 modifier = Modifier
                     .size(48.dp)
                     .clickable {
-                        startCulinaireActivity(context)
+                        Navigation.startCulinaireActivity(context)
                     }
             )
 
@@ -355,7 +341,7 @@ class DinnerListActivity : ComponentActivity() {
                 modifier = Modifier
                     .size(48.dp)
                     .clickable {
-                        startSettingsActivity(context)
+                        Navigation.startSettingsActivity(context)
                     }
             )
         }

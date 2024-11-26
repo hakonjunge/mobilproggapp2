@@ -15,12 +15,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.R
+import com.example.myapplication.backend.Navigation
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -37,15 +34,14 @@ class Login : ComponentActivity() {
         // Check if user is already logged in and session is valid
         val currentUser = auth.currentUser
         if (currentUser != null && !isSessionExpired(this)) {
-            val intent = Intent(this, Culinaire::class.java)
-            startActivity(intent)
+            Navigation.startCulinaireActivity(this)
             finish() // Close the Login activity
             return
         }
 
         setContent {
             MyApplicationTheme {
-                AppNavigation()
+                LoginScreen()
             }
         }
     }
@@ -66,17 +62,7 @@ fun isSessionExpired(context: Context): Boolean {
 }
 
 @Composable
-fun AppNavigation() {
-    val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "login") {
-        composable("login") { LoginScreen(navController) }
-        composable("register") { RegisterScreen(navController) }
-        composable("culinaire") { CulinaireScreen(navController = navController) }
-    }
-}
-
-@Composable
-fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
+fun LoginScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
@@ -116,14 +102,13 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
         Button(
             onClick = {
                 if (email.isBlank() || password.isBlank()) {
-                    // Use context.getString instead of stringResource for Toast messages
                     Toast.makeText(context, context.getString(R.string.enter_email_password), Toast.LENGTH_SHORT).show()
                 } else {
                     auth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                saveLoginTimestamp(context) // Save the login timestamp
-                                navController.navigate("culinaire")
+                                saveLoginTimestamp(context)
+                                Navigation.startCulinaireActivity(context)
                                 Toast.makeText(context, context.getString(R.string.login_success), Toast.LENGTH_SHORT).show()
                             } else {
                                 Toast.makeText(context, "${context.getString(R.string.login_failed)}: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
@@ -140,7 +125,7 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
 
         TextButton(
             onClick = {
-                navController.navigate("register")
+                Navigation.startRegisterActicity(context)
             }
         ) {
             Text(stringResource(id = R.string.create_account))

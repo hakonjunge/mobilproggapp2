@@ -1,5 +1,6 @@
 package com.example.myapplication.view
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Patterns
 import android.widget.Toast
@@ -13,8 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.example.myapplication.backend.Navigation
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.google.firebase.auth.FirebaseAuth
 
@@ -23,16 +23,14 @@ class Register : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyApplicationTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    RegisterScreen(rememberNavController(), modifier = Modifier.padding(innerPadding))
-                }
+                RegisterScreen()
             }
         }
     }
 }
 
 @Composable
-fun RegisterScreen(navController: NavController, modifier: Modifier = Modifier) {
+fun RegisterScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
@@ -66,7 +64,7 @@ fun RegisterScreen(navController: NavController, modifier: Modifier = Modifier) 
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(), // Mask password input
+            visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -80,23 +78,18 @@ fun RegisterScreen(navController: NavController, modifier: Modifier = Modifier) 
         // Register button
         Button(
             onClick = {
-                // Validate email format before attempting registration
                 if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                     errorMessage = "Invalid email format"
                 } else if (password.length < 6) {
                     errorMessage = "Password must be at least 6 characters long"
                 } else {
-                    errorMessage = "" // Clear error message
-                    // Handle Firebase registration
+                    errorMessage = ""
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                // Registration successful, show success message
                                 Toast.makeText(context, "Registration successful", Toast.LENGTH_SHORT).show()
-                                // Optionally, navigate back to LoginScreen after successful registration
-                                navController.navigate("login")
+                                Navigation.navigateToLogin(context)
                             } else {
-                                // Registration failed, show error message
                                 Toast.makeText(context, "Registration failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -109,9 +102,9 @@ fun RegisterScreen(navController: NavController, modifier: Modifier = Modifier) 
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Button to navigate back to login screen
+        // Navigate back to Login
         TextButton(
-            onClick = { navController.navigate("login") },
+            onClick = { Navigation.navigateToLogin(context) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Already have an account? Login")
@@ -123,6 +116,6 @@ fun RegisterScreen(navController: NavController, modifier: Modifier = Modifier) 
 @Composable
 fun RegisterScreenPreview() {
     MyApplicationTheme {
-        RegisterScreen(rememberNavController())
+        RegisterScreen()
     }
 }

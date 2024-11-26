@@ -46,6 +46,11 @@
     android:exported="true"
     android:label="@string/title_activity_login"
     android:theme="@style/Theme.MyApplication" />
+        <activity
+            android:name=".view.Register"
+            android:exported="true"
+            android:label="@string/title_activity_register"
+            android:theme="@style/Theme.MyApplication" />
 
     <receiver
     android:name=".notifications.ReminderReceiver"
